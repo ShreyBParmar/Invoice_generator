@@ -1,0 +1,876 @@
+import { useState, useEffect, useRef } from "react";
+
+import {
+  User,
+  Building2,
+  Save,
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  Search,
+} from "lucide-react";
+
+const AddClient = ({ setActivePage }) => {
+
+  // =========================
+  // STATES
+  // =========================
+
+  const [clientType, setClientType] =
+    useState("individual");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  // Countries
+  const [countries, setCountries] =
+    useState([]);
+
+  // Currency
+  const [currencies, setCurrencies] =
+    useState([]);
+
+  const [showCurrencies,
+    setShowCurrencies] =
+    useState(false);
+
+  const [currencySearch,
+    setCurrencySearch] =
+    useState("");
+
+  // Refs
+  const countryRef = useRef();
+  const currencyRef = useRef();
+
+  // =========================
+  // FORM DATA
+  // =========================
+
+  const [formData, setFormData] =
+    useState({
+
+      organizationName: "",
+
+      firstname: "",
+      lastname: "",
+
+      email: "",
+      website: "",
+
+      currency: "",
+      language: "English (US)",
+
+      address1: "",
+      address2: "",
+
+      postalcode: "",
+      state: "",
+      city: "",
+      country: "",
+
+      phone: "",
+      fax: "",
+
+      taxid: "",
+      notes: "",
+  });
+
+  // =========================
+  // HANDLE CHANGE
+  // =========================
+
+  const handleChange = (e) => {
+
+    setFormData({
+      ...formData,
+      [e.target.name]:
+      e.target.value
+    });
+  };
+
+  // =========================
+  // FETCH COUNTRIES
+  // =========================
+
+  const fetchCountries = async () => {
+
+    if (countries.length > 0) return;
+
+    try {
+
+        const response = await fetch(
+            "https://restcountries.com/v3.1/all?fields=name,cca3"
+        );
+
+        const data = await response.json();
+
+        console.log(data);
+
+        const sortedCountries = data.sort((a, b) =>
+            a.name.common.localeCompare(b.name.common)
+        );
+
+        setCountries(sortedCountries);
+
+    } catch (error) {
+        console.log(error);
+    }
+};
+  
+  // =========================
+  // FETCH CURRENCIES
+  // =========================
+
+  const fetchCurrencies = async () => {
+
+    if (currencies.length > 0) {
+      setShowCurrencies(true);
+      return;
+    }
+
+    try {
+
+      const response = await fetch(
+        "https://restcountries.com/v3.1/all"
+      );
+
+      const data =
+        await response.json();
+
+      const currencyList = [];
+
+      data.forEach((country) => {
+
+        if (country.currencies) {
+
+          Object.entries(
+            country.currencies
+          ).forEach(
+            ([code, value]) => {
+
+            currencyList.push({
+              code,
+              name: value.name
+            });
+
+          });
+        }
+      });
+
+      // Remove duplicates
+      const uniqueCurrencies =
+        Array.from(
+          new Map(
+            currencyList.map(
+              (item) => [
+                item.code,
+                item
+              ]
+            )
+          ).values()
+        );
+
+      uniqueCurrencies.sort(
+        (a, b) =>
+          a.code.localeCompare(
+            b.code
+          )
+      );
+
+      setCurrencies(uniqueCurrencies);
+
+      setShowCurrencies(true);
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+  };
+
+  // =========================
+  // FILTERED LISTS
+  // =========================
+
+  const filteredCurrencies =
+    currencies.filter((currency) =>
+      `${currency.code} ${currency.name}`
+      .toLowerCase()
+      .includes(
+        currencySearch.toLowerCase()
+      )
+  );
+
+  // =========================
+  // CLICK OUTSIDE
+  // =========================
+
+  useEffect(() => {
+
+    const handleClickOutside =
+      (event) => {
+
+      if (
+        countryRef.current &&
+        !countryRef.current.contains(
+          event.target
+        )
+      ) {
+        setShowCountries(false);
+      }
+
+      if (
+        currencyRef.current &&
+        !currencyRef.current.contains(
+          event.target
+        )
+      ) {
+        setShowCurrencies(false);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    return () => {
+
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    };
+
+  }, []);
+
+  // =========================
+  // SUBMIT
+  // =========================
+
+  const handleSubmit = async (e) => {
+
+    e.preventDefault();
+
+    try {
+
+      setLoading(true);
+
+      console.log({
+        ...formData,
+        clientType
+      });
+
+      // API CALL HERE
+
+    } catch (error) {
+
+      console.log(error);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+  };
+
+  return (
+
+    <div className="text-white">
+
+      {/* HEADER */}
+      <div className="
+        flex
+        justify-between
+        items-center
+        mb-10
+      ">
+
+        <div className="
+          flex
+          items-center
+          gap-5
+        ">
+
+          {/* BACK */}
+          <button
+            type="button"
+
+            onClick={() =>
+              setActivePage(
+                "dashboard"
+              )
+            }
+
+            className="
+              bg-white/10
+              border
+              border-white/10
+              p-3
+              rounded-2xl
+              hover:bg-white/20
+              transition-all
+            "
+          >
+            <ArrowLeft size={20} />
+          </button>
+
+          <h1 className="
+            text-5xl
+            font-bold
+          ">
+            New Client
+          </h1>
+
+        </div>
+
+        {/* SAVE */}
+        <button
+          onClick={handleSubmit}
+
+          className="
+            bg-gradient-to-r
+            from-orange-500
+            to-orange-600
+            px-8
+            py-4
+            rounded-2xl
+            hover:scale-105
+            transition-all
+            duration-300
+            flex
+            items-center
+            gap-2
+          "
+        >
+
+          <Save size={18} />
+
+          {
+            loading
+            ? "Saving..."
+            : "Save Client"
+          }
+
+        </button>
+
+      </div>
+
+      {/* FORM */}
+      <form className="space-y-8">
+
+        {/* BASIC INFO */}
+        <div className="
+          bg-white/10
+          backdrop-blur-xl
+          border
+          border-white/10
+          rounded-3xl
+          overflow-hidden
+          shadow-2xl
+        ">
+
+          {/* TITLE */}
+          <div className="
+            px-8
+            py-5
+            border-b
+            border-white/10
+          ">
+
+            <h2 className="
+              text-2xl
+              font-semibold
+            ">
+              Basic Information
+            </h2>
+
+          </div>
+
+          <div className="p-8">
+
+            {/* TYPE */}
+            <div className="
+              flex
+              gap-4
+              mb-10
+            ">
+
+              {/* INDIVIDUAL */}
+              <button
+                type="button"
+
+                onClick={() =>
+                  setClientType(
+                    "individual"
+                  )
+                }
+
+                className={`
+                  flex
+                  items-center
+                  justify-between
+                  w-[280px]
+                  px-6
+                  py-4
+                  rounded-2xl
+                  border
+                  transition-all
+                  duration-300
+
+                  ${
+                    clientType ===
+                    "individual"
+
+                    ? "bg-gradient-to-r from-blue-500 to-purple-500 border-transparent"
+
+                    : "bg-white/5 border-white/10 hover:bg-white/10"
+                  }
+                `}
+              >
+
+                <div className="
+                  flex
+                  items-center
+                  gap-3
+                ">
+
+                  <User size={20} />
+
+                  Individual
+
+                </div>
+
+                {
+                  clientType ===
+                  "individual" && (
+                    <Check size={18} />
+                  )
+                }
+
+              </button>
+
+              {/* ORGANIZATION */}
+              <button
+                type="button"
+
+                onClick={() =>
+                  setClientType(
+                    "organization"
+                  )
+                }
+
+                className={`
+                  flex
+                  items-center
+                  justify-between
+                  w-[280px]
+                  px-6
+                  py-4
+                  rounded-2xl
+                  border
+                  transition-all
+                  duration-300
+
+                  ${
+                    clientType ===
+                    "organization"
+
+                    ? "bg-gradient-to-r from-blue-500 to-purple-500 border-transparent"
+
+                    : "bg-white/5 border-white/10 hover:bg-white/10"
+                  }
+                `}
+              >
+
+                <div className="
+                  flex
+                  items-center
+                  gap-3
+                ">
+
+                  <Building2 size={20} />
+
+                  Organization
+
+                </div>
+
+                {
+                  clientType ===
+                  "organization" && (
+                    <Check size={18} />
+                  )
+                }
+
+              </button>
+
+            </div>
+
+            {/* ORG FIELD */}
+            {
+              clientType ===
+              "organization" && (
+
+                <div className="mb-6">
+
+                  <input
+                    type="text"
+                    name="organizationName"
+                    placeholder="Organization Name"
+                    value={
+                      formData.organizationName
+                    }
+                    onChange={handleChange}
+                    className="input-style"
+                  />
+
+                </div>
+              )
+            }
+
+            {/* GRID */}
+            <div className="
+              grid
+              grid-cols-2
+              gap-6
+            ">
+
+              <input
+                type="text"
+                name="firstname"
+
+                placeholder={
+                  clientType ===
+                  "organization"
+
+                  ? "Contact First Name"
+
+                  : "First Name"
+                }
+
+                value={formData.firstname}
+
+                onChange={handleChange}
+
+                className="input-style"
+              />
+
+              <input
+                type="text"
+                name="lastname"
+
+                placeholder={
+                  clientType ===
+                  "organization"
+
+                  ? "Contact Last Name"
+
+                  : "Last Name"
+                }
+
+                value={formData.lastname}
+
+                onChange={handleChange}
+
+                className="input-style"
+              />
+
+              <input
+                type="email"
+                name="email"
+                placeholder="Email Address"
+                value={formData.email}
+                onChange={handleChange}
+                className="input-style"
+              />
+
+              <input
+                type="text"
+                name="website"
+                placeholder="Website URL"
+                value={formData.website}
+                onChange={handleChange}
+                className="input-style"
+              />
+
+              {/* CURRENCY */}
+              <div
+                className="relative"
+                ref={currencyRef}
+              >
+
+                <div
+                  onClick={
+                    fetchCurrencies
+                  }
+
+                  className="
+                    input-style
+                    flex
+                    items-center
+                    justify-between
+                    cursor-pointer
+                  "
+                >
+
+                  <span>
+
+                    {
+                      formData.currency
+                      || "Select Currency"
+                    }
+
+                  </span>
+
+                  <ChevronDown
+                    size={18}
+                  />
+
+                </div>
+
+                {
+                  showCurrencies && (
+
+                    <div className="
+                      absolute
+                      top-full
+                      left-0
+                      w-full
+                      mt-2
+                      bg-slate-900
+                      border
+                      border-white/10
+                      rounded-2xl
+                      overflow-hidden
+                      z-50
+                      shadow-2xl
+                    ">
+
+                      {/* SEARCH */}
+                      <div className="
+                        flex
+                        items-center
+                        gap-3
+                        px-4
+                        py-3
+                        border-b
+                        border-white/10
+                      ">
+
+                        <Search size={18} />
+
+                        <input
+                          type="text"
+                          placeholder="Search currency..."
+
+                          value={
+                            currencySearch
+                          }
+
+                          onChange={(e) =>
+                            setCurrencySearch(
+                              e.target.value
+                            )
+                          }
+
+                          className="
+                            bg-transparent
+                            outline-none
+                            w-full
+                          "
+                        />
+
+                      </div>
+
+                      {/* LIST */}
+                      <div className="
+                        max-h-[250px]
+                        overflow-y-auto
+                      ">
+
+                        {
+                          filteredCurrencies.map(
+                            (currency) => (
+
+                            <div
+                              key={
+                                currency.code
+                              }
+
+                              onClick={() => {
+
+                                setFormData({
+                                  ...formData,
+
+                                  currency:
+                                  `${currency.code} - ${currency.name}`
+                                });
+
+                                setShowCurrencies(
+                                  false
+                                );
+                              }}
+
+                              className="
+                                px-5
+                                py-4
+                                hover:bg-white/10
+                                cursor-pointer
+                                transition-all
+                              "
+                            >
+
+                              {
+                                currency.code
+                              }
+                              {" - "}
+                              {
+                                currency.name
+                              }
+
+                            </div>
+
+                          ))
+                        }
+
+                      </div>
+
+                    </div>
+
+                  )
+                }
+
+              </div>
+
+              {/* LANGUAGE */}
+              <label className="input-style">English (US)</label>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ADDRESS */}
+        <div className="
+          bg-white/10
+          backdrop-blur-xl
+          border
+          border-white/10
+          rounded-3xl
+          overflow-hidden
+        ">
+
+          <div className="
+            px-8
+            py-5
+            border-b
+            border-white/10
+          ">
+
+            <h2 className="
+              text-2xl
+              font-semibold
+            ">
+              Address
+            </h2>
+
+          </div>
+
+          <div className="
+            p-8
+            grid
+            grid-cols-2
+            gap-6
+          ">
+
+            <input
+              type="text"
+              name="address1"
+              placeholder="Address Line 1"
+              value={formData.address1}
+              onChange={handleChange}
+              className="input-style"
+            />
+
+            <input
+              type="text"
+              name="postalcode"
+              placeholder="Postal Code"
+              value={formData.postalcode}
+              onChange={handleChange}
+              className="input-style"
+            />
+
+            <input
+              type="text"
+              name="address2"
+              placeholder="Address Line 2"
+              value={formData.address2}
+              onChange={handleChange}
+              className="input-style"
+            />
+
+            <input
+              type="text"
+              name="state"
+              placeholder="State"
+              value={formData.state}
+              onChange={handleChange}
+              className="input-style"
+            />
+
+            <input
+              type="text"
+              name="city"
+              placeholder="City"
+              value={formData.city}
+              onChange={handleChange}
+              className="input-style"
+            />
+
+            {/* COUNTRY */}
+            <select
+              name="country"
+              value={formData.country}
+              onChange={handleChange}
+              onFocus={fetchCountries}
+              className="input-style"
+              required
+            >
+
+            <option
+                value=""
+                className="bg-[#1e293b] text-white"
+            >
+                Select Country
+            </option>
+
+            {countries.map((country) => (
+
+                <option
+                    key={country.cca3}
+                    value={country.name.common}
+                    className="
+                        bg-[#1e293b]
+                        text-white
+                    "
+                >
+                    {country.name.common}
+                </option>
+
+            ))}
+
+        </select>
+
+          </div>
+
+        </div>
+
+      </form>
+
+    </div>
+  );
+};
+
+export default AddClient;
