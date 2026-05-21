@@ -13,6 +13,39 @@ import {
 const AddClient = ({ setActivePage }) => {
 
   // =========================
+  // INITIAL FORM
+  // =========================
+
+  const initialFormData = {
+
+  organizationName:"",
+
+  firstname:"",
+  lastname:"",
+
+  email:"",
+  website:"",
+
+  currency:"",
+  language:"English (US)",
+
+  address1:"",
+  address2:"",
+
+  postalcode:"",
+  state:"",
+  city:"",
+  country:"",
+
+  phone:"",
+  fax:"",
+
+  taxid:"",
+  notes:""
+
+};
+
+  // =========================
   // STATES
   // =========================
 
@@ -27,53 +60,16 @@ const AddClient = ({ setActivePage }) => {
     useState([]);
 
   // Currency
-  const [currencies, setCurrencies] =
-    useState([]);
+  const [currencies, setCurrencies] = useState([]);
 
-  const [showCurrencies,
-    setShowCurrencies] =
-    useState(false);
-
-  const [currencySearch,
-    setCurrencySearch] =
-    useState("");
-
-  // Refs
-  const countryRef = useRef();
-  const currencyRef = useRef();
+  const [selectedCurrency, setSelectedCurrency] = useState("");
 
   // =========================
   // FORM DATA
   // =========================
 
   const [formData, setFormData] =
-    useState({
-
-      organizationName: "",
-
-      firstname: "",
-      lastname: "",
-
-      email: "",
-      website: "",
-
-      currency: "",
-      language: "English (US)",
-
-      address1: "",
-      address2: "",
-
-      postalcode: "",
-      state: "",
-      city: "",
-      country: "",
-
-      phone: "",
-      fax: "",
-
-      taxid: "",
-      notes: "",
-  });
+    useState(initialFormData);
 
   // =========================
   // HANDLE CHANGE
@@ -87,6 +83,19 @@ const AddClient = ({ setActivePage }) => {
       e.target.value
     });
   };
+
+  const handleClientTypeChange =
+(type)=>{
+
+  setClientType(type);
+
+  setFormData(
+    initialFormData
+  );
+
+  setSelectedCurrency("");
+
+};
 
   // =========================
   // FETCH COUNTRIES
@@ -120,128 +129,60 @@ const AddClient = ({ setActivePage }) => {
   // =========================
   // FETCH CURRENCIES
   // =========================
-
-  const fetchCurrencies = async () => {
-
-    if (currencies.length > 0) {
-      setShowCurrencies(true);
-      return;
-    }
+  const fetchCurrencies =
+  async () => {
 
     try {
 
-      const response = await fetch(
-        "https://restcountries.com/v3.1/all"
+      const res =
+      await fetch(
+      "https://openexchangerates.org/api/currencies.json"
       );
 
       const data =
-        await response.json();
+      await res.json();
 
-      const currencyList = [];
+      const currencyArray =
+      Object.entries(data).map(
 
-      data.forEach((country) => {
+      ([code, name]) => ({
 
-        if (country.currencies) {
+        code,
+        name
 
-          Object.entries(
-            country.currencies
-          ).forEach(
-            ([code, value]) => {
+      })
 
-            currencyList.push({
-              code,
-              name: value.name
-            });
-
-          });
-        }
-      });
-
-      // Remove duplicates
-      const uniqueCurrencies =
-        Array.from(
-          new Map(
-            currencyList.map(
-              (item) => [
-                item.code,
-                item
-              ]
-            )
-          ).values()
-        );
-
-      uniqueCurrencies.sort(
-        (a, b) =>
-          a.code.localeCompare(
-            b.code
-          )
       );
 
-      setCurrencies(uniqueCurrencies);
+      currencyArray.sort(
+      (a,b)=>
 
-      setShowCurrencies(true);
+      a.code.localeCompare(b.code)
 
-    } catch (error) {
+      );
 
-      console.log(error);
+      setCurrencies(
+      currencyArray
+      );
 
     }
+
+    catch(error){
+
+      console.log(
+      error
+      );
+
+    }
+
   };
-
-  // =========================
-  // FILTERED LISTS
-  // =========================
-
-  const filteredCurrencies =
-    currencies.filter((currency) =>
-      `${currency.code} ${currency.name}`
-      .toLowerCase()
-      .includes(
-        currencySearch.toLowerCase()
-      )
-  );
-
+  
   // =========================
   // CLICK OUTSIDE
   // =========================
 
   useEffect(() => {
-
-    const handleClickOutside =
-      (event) => {
-
-      if (
-        countryRef.current &&
-        !countryRef.current.contains(
-          event.target
-        )
-      ) {
-        setShowCountries(false);
-      }
-
-      if (
-        currencyRef.current &&
-        !currencyRef.current.contains(
-          event.target
-        )
-      ) {
-        setShowCurrencies(false);
-      }
-    };
-
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
-
-    return () => {
-
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
-    };
-
+    fetchCurrencies();
   }, []);
 
   // =========================
@@ -400,11 +341,7 @@ const AddClient = ({ setActivePage }) => {
               <button
                 type="button"
 
-                onClick={() =>
-                  setClientType(
-                    "individual"
-                  )
-                }
+               onClick={() => handleClientTypeChange("individual")}
 
                 className={`
                   flex
@@ -454,11 +391,7 @@ const AddClient = ({ setActivePage }) => {
               <button
                 type="button"
 
-                onClick={() =>
-                  setClientType(
-                    "organization"
-                  )
-                }
+               onClick={() => handleClientTypeChange("organization")}
 
                 className={`
                   flex
@@ -595,150 +528,40 @@ const AddClient = ({ setActivePage }) => {
 
               {/* CURRENCY */}
               <div
-                className="relative"
-                ref={currencyRef}
+                className="relative">
+              <select
+                value={selectedCurrency}
+                onChange={(e)=> setSelectedCurrency(e.target.value)}
+                className="input-style"     
               >
 
-                <div
-                  onClick={
-                    fetchCurrencies
-                  }
+              <option value="" className="bg-[#1e293b] text-white">
+                  Select Currency
+              </option>
 
-                  className="
-                    input-style
-                    flex
-                    items-center
-                    justify-between
-                    cursor-pointer
-                  "
+              {
+                currencies.map(
+                  currency => (
+                <option
+                  key={
+                    currency.code
+                  }
+                  value={
+                    currency.code
+                  }
+                  className="bg-[#1e293b] text-white"
                 >
 
-                  <span>
+                { currency.code }
 
-                    {
-                      formData.currency
-                      || "Select Currency"
-                    }
+                {" - "}
+                
+                {currency.name}
 
-                  </span>
-
-                  <ChevronDown
-                    size={18}
-                  />
-
-                </div>
-
-                {
-                  showCurrencies && (
-
-                    <div className="
-                      absolute
-                      top-full
-                      left-0
-                      w-full
-                      mt-2
-                      bg-slate-900
-                      border
-                      border-white/10
-                      rounded-2xl
-                      overflow-hidden
-                      z-50
-                      shadow-2xl
-                    ">
-
-                      {/* SEARCH */}
-                      <div className="
-                        flex
-                        items-center
-                        gap-3
-                        px-4
-                        py-3
-                        border-b
-                        border-white/10
-                      ">
-
-                        <Search size={18} />
-
-                        <input
-                          type="text"
-                          placeholder="Search currency..."
-
-                          value={
-                            currencySearch
-                          }
-
-                          onChange={(e) =>
-                            setCurrencySearch(
-                              e.target.value
-                            )
-                          }
-
-                          className="
-                            bg-transparent
-                            outline-none
-                            w-full
-                          "
-                        />
-
-                      </div>
-
-                      {/* LIST */}
-                      <div className="
-                        max-h-[250px]
-                        overflow-y-auto
-                      ">
-
-                        {
-                          filteredCurrencies.map(
-                            (currency) => (
-
-                            <div
-                              key={
-                                currency.code
-                              }
-
-                              onClick={() => {
-
-                                setFormData({
-                                  ...formData,
-
-                                  currency:
-                                  `${currency.code} - ${currency.name}`
-                                });
-
-                                setShowCurrencies(
-                                  false
-                                );
-                              }}
-
-                              className="
-                                px-5
-                                py-4
-                                hover:bg-white/10
-                                cursor-pointer
-                                transition-all
-                              "
-                            >
-
-                              {
-                                currency.code
-                              }
-                              {" - "}
-                              {
-                                currency.name
-                              }
-
-                            </div>
-
-                          ))
-                        }
-
-                      </div>
-
-                    </div>
-
-                  )
-                }
+              </option>
+              ) 
+              )}
+      </select>
 
               </div>
 
