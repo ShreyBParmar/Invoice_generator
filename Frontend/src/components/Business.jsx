@@ -26,6 +26,11 @@ localStorage.getItem("token");
     e.preventDefault();
 
     try{
+      const token =
+localStorage.getItem("token");
+
+console.log(token);
+
       const res = await fetch("http://localhost:3000/api/auth/business",{
         method: "POST",
         headers: {

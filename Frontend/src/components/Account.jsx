@@ -66,7 +66,7 @@ const Account = ({ nextStep }) => {
 
             const data= await res.json()
 
-            if(response.ok){
+            if(res.ok){
                 console.log("Account created");
                 nextStep()
             }

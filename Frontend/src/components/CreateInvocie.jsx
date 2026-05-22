@@ -418,7 +418,7 @@ const CreateInvoice = ({
             ">
 
               {/* LOGO */}
-              <div className="
+              <button className="
                 w-[150px]
                 h-[150px]
                 rounded-full
@@ -431,11 +431,12 @@ const CreateInvoice = ({
                 text-center
                 text-xl
                 font-bold
+                hover:cursor-grab active:cursor-grabbing
               ">
 
                 YOUR LOGO
 
-              </div>
+              </button>
 
               {/* CURRENCY */}
               <div className="w-full">
@@ -444,7 +445,7 @@ const CreateInvoice = ({
                   block
                   mb-3
                   text-slate-300
-                ">
+                ">  
                   Currency
                 </label>
 

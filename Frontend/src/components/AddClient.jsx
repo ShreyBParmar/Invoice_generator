@@ -37,12 +37,9 @@ const AddClient = ({ setActivePage }) => {
   city:"",
   country:"",
 
-  phone:"",
-  fax:"",
-
-  taxid:"",
-  notes:""
-
+  phone_number:"",
+  fax_number:"",
+  tax_id:""
 };
 
   // =========================
@@ -188,32 +185,40 @@ const AddClient = ({ setActivePage }) => {
   // =========================
   // SUBMIT
   // =========================
-
   const handleSubmit = async (e) => {
 
     e.preventDefault();
 
-    try {
+   try{
+      const token = localStorage.getItem("token");
+      
+      const payload = {...formData, clientType};
 
-      setLoading(true);
+            const res = await fetch("http://localhost:3000/api/addclient",{
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            })
 
-      console.log({
-        ...formData,
-        clientType
-      });
+            const data= await res.json()
 
-      // API CALL HERE
+            if(res.ok){
+              localStorage.setItem("token", data.token);
+              console.log("Client data saved");
+            }
 
-    } catch (error) {
-
-      console.log(error);
-
-    } finally {
-
-      setLoading(false);
-
-    }
-  };
+            else{
+                console.log("Error");
+            }
+        }
+        catch(error){
+            console.log(error);
+        }
+       
+    };
 
   return (
 
@@ -530,8 +535,8 @@ const AddClient = ({ setActivePage }) => {
               <div
                 className="relative">
               <select
-                value={selectedCurrency}
-                onChange={(e)=> setSelectedCurrency(e.target.value)}
+                value={formData.currency}
+                onChange={(e)=>{ setFormData({...formData, currency:e.target.value }) }}
                 className="input-style"     
               >
 
@@ -689,6 +694,65 @@ const AddClient = ({ setActivePage }) => {
           </div>
 
         </div>
+        <div className="
+          bg-white/10
+          backdrop-blur-xl
+          border
+          border-white/10
+          rounded-3xl
+          overflow-hidden
+        ">
+
+          <div className="
+            px-8
+            py-5
+            border-b
+            border-white/10
+          ">
+
+            <h2 className="
+              text-2xl
+              font-semibold
+            ">
+              Additional Information
+            </h2>
+
+          </div>
+
+          <div className="
+            p-8
+            grid
+            grid-cols-2
+            gap-6
+          ">
+
+            <input
+              type="text"
+              name="phone_number"
+              placeholder="Phone number"
+              value={formData.phone_number}
+              onChange={handleChange}
+              className="input-style"
+            />
+
+            <input
+              type="text"
+              name="fax_number"
+              placeholder="Fax number"
+              value={formData.fax_number}
+              onChange={handleChange}
+              className="input-style"
+            />
+
+            <input
+              type="text"
+              name="tax_id"
+              placeholder="Tax identification"
+              value={formData.tax_id}
+              onChange={handleChange}
+              className="input-style"
+            />
+            </div></div>
 
       </form>
 

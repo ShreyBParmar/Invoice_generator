@@ -7,6 +7,9 @@ export const auth =
       const authHeader =
       req.headers.authorization;
 
+      console.log("Auth header: ",req.headers.authorization);
+      
+
       if(!authHeader){
 
          return res.status(401).json({
@@ -18,7 +21,10 @@ export const auth =
 
       const token =
       authHeader.split(" ")[1];
-
+console.log(
+"TOKEN:",
+token
+);
       // VERIFY TOKEN
 
       const decoded =

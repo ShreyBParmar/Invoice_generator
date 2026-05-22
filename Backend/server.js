@@ -6,6 +6,7 @@ import cors from "cors";
 import pool from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js"
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import addClientRoutes from "./routes/addClientRoutes.js"
 
 const app = express();
 
@@ -18,6 +19,7 @@ pool.connect()
 
 app.use("/api/auth",authRoutes)
 app.use("/api/dashboard",dashboardRoutes)
+app.use("/api/addclient", addClientRoutes)
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);

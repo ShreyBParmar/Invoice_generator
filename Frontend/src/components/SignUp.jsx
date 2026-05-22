@@ -45,12 +45,13 @@ const SignUp = ({nextStep}) => {
         if(response.ok){
           localStorage.setItem("token", data.token);
           console.log("user created");
+          console.log(data);
           nextStep();
         }
         else{
           console.log("Error");
         }
-        console.log(data);
+        
     } catch (error) {
         console.log(error);
     }
