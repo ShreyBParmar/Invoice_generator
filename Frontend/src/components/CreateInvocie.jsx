@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useRef } from "react";
 
 import {
   ArrowLeft,
@@ -17,6 +17,45 @@ const CreateInvoice = ({
 
   const [loading, setLoading] =
     useState(false);
+
+  const fileInputRef = useRef(null);
+
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
+
+  const [showTaxDropdown,
+setShowTaxDropdown] =
+useState(false);
+
+const [taxName,setTaxName] =
+useState("");
+
+const [taxRate,setTaxRate] =
+useState("");
+
+const [taxAmount,
+setTaxAmount] =
+useState(0);
+
+const [taxConfigured,
+setTaxConfigured] =
+useState(false);
+
+const [showDiscountDropdown,
+setShowDiscountDropdown] =
+useState(false);
+
+const [discountName,
+setDiscountName] =
+useState("");
+
+const [discountAmount,
+setDiscountAmount] =
+useState(0);
+
+const [discountConfigured,
+setDiscountConfigured] =
+useState(false);
 
   const [invoiceData,
     setInvoiceData] =
@@ -43,10 +82,8 @@ const CreateInvoice = ({
 
       notes: "",
 
-      tax: 0,
-
-      discount: 0,
-  });
+      discountPercent: 0,
+discountPrice: 0,});
 
   // =========================
   // ITEMS
@@ -61,6 +98,41 @@ const CreateInvoice = ({
         amount: 0,
       },
   ]);
+
+  // =========================
+  // HANDLE LOGO UPLOAD
+  // =========================
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        return;
+      }
+
+      setLogoFile(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleLogoButtonClick = () => {
+    fileInputRef.current?.click();
+  };
 
   // =========================
   // HANDLE INPUT
@@ -138,34 +210,25 @@ const CreateInvoice = ({
   // =========================
 
   const subtotal =
-    items.reduce(
+items.reduce(
 
-      (total, item) =>
+(total,item)=>
 
-        total +
-        Number(item.amount),
+total +
+Number(item.amount),
 
-      0
-    );
+0
+);
 
-  const taxAmount =
-    subtotal *
-    (
-      Number(invoiceData.tax)
-      / 100
-    );
+const taxTotal = Number(taxAmount) || 0;
 
-  const discountAmount =
-    subtotal *
-    (
-      Number(invoiceData.discount)
-      / 100
-    );
+const discountTotal = Number(discountAmount) || 0;
 
-  const finalTotal =
-    subtotal +
-    taxAmount -
-    discountAmount;
+const finalTotal =
+
+subtotal +
+taxTotal -
+discountTotal;
 
   // =========================
   // SUBMIT
@@ -177,28 +240,68 @@ const CreateInvoice = ({
 
       setLoading(true);
 
-      const payload = {
+      // Validate required fields
+      if (!invoiceData.clientName.trim()) {
+        alert("Please enter client name");
+        return;
+      }
 
+      if (!invoiceData.invoiceDate) {
+        alert("Please select invoice date");
+        return;
+      }
+
+      // Create FormData to handle both files and JSON data
+      const formData = new FormData();
+
+      // Add logo file if selected
+      if (logoFile) {
+        formData.append('logo', logoFile);
+      }
+
+      // Add invoice data as JSON
+      const invoicePayload = {
         ...invoiceData,
-
         items,
-
         subtotal,
-
-        taxAmount,
-
-        discountAmount,
-
+        taxAmount: taxTotal,
+        discountAmount: discountTotal,
         finalTotal,
+        taxName: taxConfigured ? taxName : null,
+        discountName: discountConfigured ? discountName : null,
       };
 
-      console.log(payload);
+      formData.append('invoiceData', JSON.stringify(invoicePayload));
 
-      // API CALL HERE
+      console.log('Submitting Invoice:', invoicePayload);
+      console.log('Logo File:', logoFile);
+
+      // API CALL - Create Invoice
+      const token = localStorage.getItem('token'); // Get token from localStorage
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to save invoice');
+      }
+
+      alert('Invoice saved successfully!');
+      console.log('Invoice created:', result.data);
+      
+      // Reset form or navigate back
+      setActivePage('dashboard');
 
     } catch(error) {
 
-      console.log(error);
+      console.error('Error:', error);
+      alert('Error saving invoice: ' + error.message);
 
     } finally {
 
@@ -418,28 +521,53 @@ const CreateInvoice = ({
             ">
 
               {/* LOGO */}
-              <button className="
-                w-[150px]
-                h-[150px]
-                rounded-full
-                bg-gradient-to-br
-                from-blue-500
-                to-purple-500
-                flex
-                items-center
-                justify-center
-                text-center
-                text-xl
-                font-bold
-                hover:cursor-grab active:cursor-grabbing
-              ">
-
-                YOUR LOGO
-
+              <button 
+                onClick={handleLogoButtonClick}
+                className="
+                  w-[150px]
+                  h-[150px]
+                  rounded-full
+                  bg-gradient-to-br
+                  from-blue-500
+                  to-purple-500
+                  flex
+                  items-center
+                  justify-center
+                  text-center
+                  text-xl
+                  font-bold
+                  mr-40
+                  hover:cursor-pointer
+                  hover:scale-110
+                  active:scale-95
+                  transition-all
+                  overflow-hidden
+                  border-2
+                  border-white/20
+                "
+              >
+                {logoPreview ? (
+                  <img 
+                    src={logoPreview} 
+                    alt="Logo" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  'YOUR LOGO'
+                )}
               </button>
 
+              {/* HIDDEN FILE INPUT */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                style={{ display: 'none' }}
+              />
+
               {/* CURRENCY */}
-              <div className="w-full">
+              <div className="w-full mt-18">
 
                 <label className="
                   block
@@ -872,58 +1000,379 @@ const CreateInvoice = ({
 
               </div>
 
-              {/* TAX */}
-              <div className="
-                flex
-                justify-between
-                items-center
-              ">
+              {/* TAX SECTION */}
 
-                <span>
-                  Tax %
-                </span>
+<div className="space-y-4">
 
-                <input
-                  type="number"
-                  name="tax"
-                  value={
-                    invoiceData.tax
-                  }
-                  onChange={handleChange}
-                  className="
-                    input-style
-                    w-[120px]
-                  "
-                />
+  {/* TOP */}
+  <div className="
+    flex
+    justify-between
+    items-center
+  ">
 
-              </div>
+    <button
 
-              {/* DISCOUNT */}
-              <div className="
-                flex
-                justify-between
-                items-center
-              ">
+      onClick={() =>
+        setShowTaxDropdown(
+          !showTaxDropdown
+        )
+      }
 
-                <span>
-                  Discount %
-                </span>
+      className="
+        px-5
+        py-3
+        rounded-2xl
+        bg-white/10
+        hover:bg-white/20
+        transition-all
+      "
+    >
 
-                <input
-                  type="number"
-                  name="discount"
-                  value={
-                    invoiceData.discount
-                  }
-                  onChange={handleChange}
-                  className="
-                    input-style
-                    w-[120px]
-                  "
-                />
+      {taxConfigured ? "Edit Tax" : "+ Add Tax"}
 
-              </div>
+    </button>
 
+    {
+      taxConfigured && (
+
+        <div className="
+          flex
+          items-center
+          gap-6
+        ">
+
+          <div className="
+            text-right
+          ">
+
+            <p className="
+              text-slate-300
+            ">
+              {taxName}
+            </p>
+
+            <p className="
+              text-green-400
+              font-semibold
+            ">
+              +₹
+              {
+                taxTotal.toFixed(2)
+              }
+            </p>
+
+          </div>
+
+          <button
+            onClick={() => {
+              setTaxConfigured(false);
+              setTaxName("");
+              setTaxAmount(0);
+              setShowTaxDropdown(false);
+            }}
+            className="
+              px-3
+              py-2
+              rounded-lg
+              bg-red-500/20
+              hover:bg-red-500/40
+              text-red-400
+              transition-all
+              text-sm
+            "
+          >
+            Remove
+          </button>
+
+        </div>
+
+      )
+    }
+
+  </div>
+
+  {/* DROPDOWN */}
+  {
+    showTaxDropdown && (
+
+      <div className="
+        bg-white/5
+        border
+        border-white/10
+        rounded-3xl
+        p-6
+        space-y-5
+      ">
+
+        {/* TAX NAME */}
+        <input
+          type="text"
+
+          placeholder="
+            Tax Name
+          "
+
+          value={taxName}
+
+          onChange={(e)=>
+            setTaxName(
+              e.target.value
+            )
+          }
+
+          className="
+            input-style
+          "
+        />
+
+        {/* RATE */}
+        <input
+          type="number"
+
+          placeholder="
+            Tax Amount
+          "
+
+          value={taxAmount}
+
+          onChange={(e)=>
+            setTaxAmount(
+              e.target.value
+            )
+          }
+
+          className="
+            input-style
+          "
+        />
+
+        {/* SET BUTTON */}
+        <button
+
+          onClick={() => {
+            if (!taxName.trim()) {
+              alert("Please enter tax name");
+              return;
+            }
+            if (!taxAmount || taxAmount <= 0) {
+              alert("Please enter valid tax amount");
+              return;
+            }
+            setTaxConfigured(true);
+            setShowTaxDropdown(false);
+          }}
+
+          className="
+            px-6
+            py-3
+            rounded-2xl
+            bg-gradient-to-r
+            from-blue-500
+            to-purple-500
+            hover:scale-105
+            transition-all
+            w-full
+          "
+        >
+
+          {taxConfigured ? "Update Tax" : "Set Tax"}
+
+        </button>
+
+      </div>
+
+    )
+  }
+
+</div>
+
+{/* DISCOUNT SECTION */}
+
+<div className="space-y-4">
+
+  {/* TOP */}
+  <div className="
+    flex
+    justify-between
+    items-center
+  ">
+
+    <button
+
+      onClick={() =>
+        setShowDiscountDropdown(
+          !showDiscountDropdown
+        )
+      }
+
+      className="
+        px-5
+        py-3
+        rounded-2xl
+        bg-white/10
+        hover:bg-white/20
+        transition-all
+      "
+    >
+
+      {discountConfigured ? "Edit Discount" : "+ Add Discount"}
+
+    </button>
+
+    {
+      discountConfigured && (
+
+        <div className="
+          flex
+          items-center
+          gap-6
+        ">
+
+          <div className="
+            text-right
+          ">
+
+            <p className="
+              text-slate-300
+            ">
+              {discountName}
+            </p>
+
+            <p className="
+              text-red-400
+              font-semibold
+            ">
+              -₹
+              {
+                discountTotal.toFixed(2)
+              }
+            </p>
+
+          </div>
+
+          <button
+            onClick={() => {
+              setDiscountConfigured(false);
+              setDiscountName("");
+              setDiscountAmount(0);
+              setShowDiscountDropdown(false);
+            }}
+            className="
+              px-3
+              py-2
+              rounded-lg
+              bg-red-500/20
+              hover:bg-red-500/40
+              text-red-400
+              transition-all
+              text-sm
+            "
+          >
+            Remove
+          </button>
+
+        </div>
+
+      )
+    }
+
+  </div>
+
+  {/* DROPDOWN */}
+  {
+    showDiscountDropdown && (
+
+      <div className="
+        bg-white/5
+        border
+        border-white/10
+        rounded-3xl
+        p-6
+        space-y-5
+      ">
+
+        {/* NAME */}
+        <input
+          type="text"
+
+          placeholder="
+            Discount Name
+          "
+
+          value={discountName}
+
+          onChange={(e)=>
+            setDiscountName(
+              e.target.value
+            )
+          }
+
+          className="
+            input-style
+          "
+        />
+
+        {/* PERCENT */}
+        <input
+          type="number"
+
+          placeholder="
+            Discount Amount
+          "
+
+          value={discountAmount}
+
+          onChange={(e)=>
+            setDiscountAmount(
+              e.target.value
+            )
+          }
+
+          className="
+            input-style
+          "
+        />
+
+        {/* BUTTON */}
+        <button
+
+          onClick={() => {
+            if (!discountName.trim()) {
+              alert("Please enter discount name");
+              return;
+            }
+            if (!discountAmount || discountAmount <= 0) {
+              alert("Please enter valid discount amount");
+              return;
+            }
+            setDiscountConfigured(true);
+            setShowDiscountDropdown(false);
+          }}
+
+          className="
+            px-6
+            py-3
+            rounded-2xl
+            bg-gradient-to-r
+            from-pink-500
+            to-red-500
+            hover:scale-105
+            transition-all
+            w-full
+          "
+        >
+
+          {discountConfigured ? "Update Discount" : "Set Discount"}
+
+        </button>
+
+      </div>
+
+    )
+  }
+
+</div>
               {/* TOTAL */}
               <div className="
                 flex

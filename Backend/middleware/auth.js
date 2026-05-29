@@ -13,18 +13,32 @@ export const auth =
       if(!authHeader){
 
          return res.status(401).json({
-            message:"No token"
+            message:"No token provided"
          });
       }
 
+      
       // EXTRACT TOKEN
 
       const token =
       authHeader.split(" ")[1];
+      
+      if(!token) {
+        return res.status(401).json({
+           message:"Invalid token format"
+        });
+      }
+
 console.log(
 "TOKEN:",
 token
 );
+
+console.log(
+"JWT_SECRET:",
+process.env.JWT_SECRET
+);
+
       // VERIFY TOKEN
 
       const decoded =
@@ -42,8 +56,10 @@ token
 
    } catch(error){
 
+      console.log("JWT Error:", error.message);
+
       res.status(401).json({
-         message:"Invalid token"
+         message:"Invalid token: " + error.message
       });
    }
 };

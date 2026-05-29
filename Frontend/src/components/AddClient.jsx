@@ -189,33 +189,80 @@ const AddClient = ({ setActivePage }) => {
 
     e.preventDefault();
 
-   try{
-      const token = localStorage.getItem("token");
-      
-      const payload = {...formData, clientType};
+    setLoading(true);
 
-            const res = await fetch("http://localhost:3000/api/addclient",{
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            })
+   try{
+      console.log("All localStorage items:", localStorage);
+      
+      const token =
+localStorage.getItem("token");
+
+console.log(
+"TOKEN from localStorage:",
+token
+);
+
+if(!token) {
+  alert("❌ No authentication token found!\n\nPlease sign up again and make sure you see 'user created successfully' message.");
+  console.log("Available localStorage keys:", Object.keys(localStorage));
+  setLoading(false);
+  return;
+}
+
+console.log(
+"Sending token:",
+token
+);
+
+console.log(
+"Header value:",
+`Bearer ${token}`
+);
+
+const payload = {
+  ...formData,
+  clientType
+};
+
+console.log("Payload:", payload);
+
+const res =
+await fetch(
+"http://localhost:3000/api/addclient",
+{
+ method:"POST",
+
+ headers:{
+   "Content-Type":
+   "application/json",
+
+   Authorization:
+   `Bearer ${token}`
+ },
+
+ body:
+ JSON.stringify(payload)
+})
 
             const data= await res.json()
 
             if(res.ok){
-              localStorage.setItem("token", data.token);
               console.log("Client data saved");
+              setActivePage("dashboard");
+              setFormData(initialFormData);
+              setClientType("individual");
             }
 
             else{
-                console.log("Error");
+                console.log("Error:", data);
+                alert("Failed to add client: " + (data.message || "Unknown error"));
             }
         }
         catch(error){
-            console.log(error);
+            console.log("Error:", error);
+            alert("Error: " + error.message);
+        } finally {
+          setLoading(false);
         }
        
     };

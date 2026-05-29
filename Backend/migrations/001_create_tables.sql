@@ -1,0 +1,17 @@
+-- ============================================
+-- MANUAL TABLE CREATION IN pgADMIN 4
+-- ============================================
+-- This migration file is kept for reference only.
+-- 
+-- To create tables in pgAdmin 4:
+-- 1. Open pgAdmin 4 and connect to your database
+-- 2. Right-click on "Databases" → Create → Database (if needed)
+-- 3. Go to Tools → Query Tool
+-- 4. Copy the SQL schema from IMPLEMENTATION_SUMMARY.md (Step 3)
+-- 5. Paste and execute in the Query Tool
+-- 6. Tables will be created with all indexes
+--
+-- Alternatively, copy the SQL blocks below and execute them in pgAdmin 4 Query Tool
+--
+-- SQL Schema: See Backend/POSTGRESQL_STORAGE_GUIDE.md for alternative storage methods
+-- ============================================

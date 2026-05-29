@@ -1,5 +1,5 @@
 import express from "express"
-import { signUp, } from "../controllers/signUp.js"
+import { signUp } from "../controllers/signUp.js"
 import { account } from "../controllers/account.js"
 import { business } from "../controllers/business.js"
 import { auth } from "../middleware/auth.js"

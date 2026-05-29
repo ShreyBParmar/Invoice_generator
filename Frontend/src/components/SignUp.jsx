@@ -1,6 +1,7 @@
 import {useState} from 'react'
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff,GraduationCap } from "lucide-react";
+import { checkTokenStatus, displayTokenStatus } from '../utils/tokenDebug';
 
 const SignUp = ({nextStep}) => {
     const [formData, setFormData] = useState({
@@ -41,19 +42,40 @@ const SignUp = ({nextStep}) => {
         );
 
         const data = await response.json();
-        
+        console.log("Response:", response);
+        console.log("Response data:", data);
+
         if(response.ok){
-          localStorage.setItem("token", data.token);
-          console.log("user created");
-          console.log(data);
-          nextStep();
+          console.log("Token from response:", data.token);
+          
+          if(data.token) {
+            localStorage.setItem("token", data.token);
+            console.log("✅ Token set in localStorage");
+            
+            // VERIFY TOKEN WAS STORED
+            const status = displayTokenStatus();
+            
+            if(status.exists) {
+              console.log("✅ TOKEN VERIFICATION SUCCESSFUL!");
+              console.log("user created successfully");
+              nextStep();
+            } else {
+              console.error("❌ TOKEN STORAGE FAILED!");
+              alert("Error: Token was not stored in localStorage");
+            }
+          } else {
+            console.error("No token in response");
+            alert("Error: No token received from server");
+          }
         }
         else{
-          console.log("Error");
+          console.log("Signup failed:", data);
+          alert("Signup failed: " + (data.message || "Unknown error"));
         }
         
     } catch (error) {
-        console.log(error);
+        console.log("Signup error:", error);
+        alert("Error during signup: " + error.message);
     }
    }
 

@@ -14,6 +14,7 @@ import Invoice from "./Invoice";
 import DashboardTab from "../components/DashboardTab";
 import AddClient from "../components/AddClient";
 import CreateInvocie from "../components/CreateInvocie";
+import { displayTokenStatus } from "../utils/tokenDebug";
 
 const Dashboard = () => {
 
@@ -21,7 +22,19 @@ const Dashboard = () => {
 
   const [activePage, setActivePage] = useState("dashboard");
 
+  const [tokenStatus, setTokenStatus] = useState("");
+
   useEffect(() => {
+    // CHECK TOKEN STATUS
+    const token = localStorage.getItem("token");
+    
+    const status = displayTokenStatus();
+    
+    if(token) {
+      setTokenStatus("✅ Token Found");
+    } else {
+      setTokenStatus("❌ No Token");
+    }
 
     const fetchDashboard = async () => {
 
@@ -166,32 +179,24 @@ const Dashboard = () => {
         </div>
 
         {/* Footer */}
-        <div className="mt-10 text-sm text-slate-400">
-          © 2026 Invoicely
+        <div className="mt-10 space-y-3">
+          <div className="text-sm text-slate-400">
+            © 2026 Invoicely
+          </div>
+          <div className={`text-xs font-semibold px-3 py-2 rounded-lg ${
+            tokenStatus.includes("✅") ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+          }`}>
+            {tokenStatus}
+          </div>
         </div>
 
       </div>
 
       {/* Main Content */}
       <div className="flex-1 p-10 overflow-y-auto">
-
-        {/* Top Header */}
-        <div className="flex justify-between items-center mb-10">
-
-          <div>
-            <h1 className="text-5xl font-bold tracking-tight">
-              Dashboard
-            </h1>
-
-            <p className="text-slate-400 mt-2">
-              Welcome back 👋
-            </p>
-          </div>
-
-          <div className="relative group">
-
-  {/* Main Button */}
-  <button
+      <div className="flex justify-between items-center mb-10">
+        <div className="relative group">
+          <button
     className="
       bg-white/10
       backdrop-blur-lg
@@ -206,6 +211,8 @@ const Dashboard = () => {
       flex
       items-center
       gap-2
+      inline-flex items-center gap-2 rounded-3xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 hover:scale-[1.02] transition
+      ml-260
     "
   >
     + Add New
@@ -268,15 +275,10 @@ const Dashboard = () => {
     >
       Create Invoice
     </button>
-
-  </div>
-
-</div>
-
         </div>
-
+      </div></div>
         {/* Dynamic Content */}
-        {activePage === "dashboard" && (<DashboardTab />)}
+        {activePage === "dashboard" && (<DashboardTab setActivePage={setActivePage} />)}
 
         {activePage === "reports" && (<Report />)}
 

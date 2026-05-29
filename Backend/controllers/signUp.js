@@ -5,11 +5,13 @@ import jwt from "jsonwebtoken";
 export const signUp = async (req, res) => {
 
     try {
-
+        console.log("SignUp request received");
         const {
             email,
             password
         } = req.body;
+
+        console.log("Email:", email);
 
         // HASH PASSWORD
 
@@ -40,6 +42,8 @@ export const signUp = async (req, res) => {
         const user =
         result.rows[0];
 
+        console.log("User created:", user.id);
+
         // CREATE JWT TOKEN
 
         const token = jwt.sign(
@@ -55,6 +59,8 @@ export const signUp = async (req, res) => {
             }
         );
 
+        console.log("Token created:", token);
+
         res.status(201).json({
 
             success: true,
@@ -69,11 +75,18 @@ export const signUp = async (req, res) => {
 
     } catch (error) {
 
-        console.log(error);
+        console.log("SignUp error:", error.message);
+
+        if(error.code === "23505") {
+          return res.status(400).json({
+            success: false,
+            message: "Email already exists"
+          });
+        }
 
         res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Server Error: " + error.message
         });
     }
 };
