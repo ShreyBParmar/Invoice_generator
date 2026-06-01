@@ -39,6 +39,26 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/addclient", addClientRoutes);
 app.use("/api/invoices", invoiceRoutes);
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Global Error Handler:', err);
+  
+  // Handle multer errors
+  if (err.name === 'MulterError') {
+    return res.status(400).json({ 
+      success: false, 
+      message: `File upload error: ${err.message}` 
+    });
+  }
+
+  // Handle any other errors
+  res.status(500).json({
+    success: false,
+    message: err.message || 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err : undefined
+  });
+});
+
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
 });

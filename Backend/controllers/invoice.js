@@ -1,341 +1,323 @@
-import { PrismaClient } from "@prisma/client";
+import pool from "../config/db.js";
 import path from "path";
 import fs from "fs";
 
-const prisma = new PrismaClient();
-
-// ============================================
 // CREATE INVOICE WITH LOGO
-// ============================================
 export const createInvoice = async (req, res) => {
+  const client = await pool.connect();
+  let userId = req.user?.id || req.userId;
+  let parsedData = null;
+  
   try {
     const { invoiceData } = req.body;
-    const userId = req.user?.id; // From auth middleware
-    const logoFile = req.file; // From multer middleware
+    const logoFile = req.file;
+
+    console.log('Create Invoice Request:', {
+      userId,
+      invoiceData,
+      logoFile: logoFile ? { filename: logoFile.filename, mimetype: logoFile.mimetype } : null,
+      bodyKeys: Object.keys(req.body)
+    });
+
+    if (!invoiceData) {
+      return res.status(400).json({ success: false, message: "Missing invoice data" });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
+    try {
+      parsedData = typeof invoiceData === 'string' ? JSON.parse(invoiceData) : invoiceData;
+      console.log('Parsed Invoice Data:', parsedData);
+    } catch (parseErr) {
+      console.error('JSON Parse Error:', parseErr);
+      return res.status(400).json({ success: false, message: "Invalid invoice data format", error: parseErr.message });
+    }
 
     // Validate required fields
-    if (!invoiceData || !invoiceData.clientName) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required invoice data",
-      });
+    if (!parsedData.currency || parsedData.currency.trim() === '') {
+      return res.status(400).json({ success: false, message: "Currency is required" });
     }
 
-    // Parse invoice data if it's a string
-    const parsedInvoiceData = typeof invoiceData === 'string' 
-      ? JSON.parse(invoiceData) 
-      : invoiceData;
+    let logoUrl = logoFile ? `/uploads/${logoFile.filename}` : null;
+    let logoMimeType = logoFile ? logoFile.mimetype : null;
 
-    // Prepare logo URL
-    let logoUrl = null;
-    let logoMimeType = null;
+    await client.query('BEGIN');
 
-    if (logoFile) {
-      logoUrl = `/uploads/${logoFile.filename}`;
-      logoMimeType = logoFile.mimetype;
+    // Resolve client
+    let clientId;
+    const clientName = (parsedData.clientName && parsedData.clientName.trim() !== '') ? parsedData.clientName.trim() : 'Default Client';
+    
+    const clientSearch = await client.query(
+      `SELECT id FROM clients WHERE user_id = $1 AND (organization_name = $2 OR first_name = $2 OR last_name = $2) LIMIT 1`,
+      [userId, clientName]
+    );
+
+    if (clientSearch.rows.length > 0) {
+      clientId = clientSearch.rows[0].id;
+    } else {
+      // Create a default client for this user
+      const newClient = await client.query(
+        `INSERT INTO clients (user_id, client_type, organization_name, email)
+         VALUES ($1, $2, $3, $4) RETURNING id`,
+        [userId, 'organization', clientName, `client_${Date.now()}_${Math.floor(Math.random() * 1000)}@example.com`]
+      );
+      clientId = newClient.rows[0].id;
+      console.log('Created new client for invoice:', clientName, 'ID:', clientId);
     }
 
-    // Create invoice
-    const invoice = await prisma.invoice.create({
-      data: {
-        userId,
-        invoiceNumber: parsedInvoiceData.invoiceNumber,
-        invoiceDate: new Date(parsedInvoiceData.invoiceDate),
-        dueDate: new Date(parsedInvoiceData.dueDate),
-        title: parsedInvoiceData.title,
-        description: parsedInvoiceData.description,
-        notes: parsedInvoiceData.notes,
-        language: parsedInvoiceData.language,
-        currency: parsedInvoiceData.currency,
-        purchaseOrder: parsedInvoiceData.purchaseOrder,
-        logoUrl,
-        logoMimeType,
-        subtotal: parseFloat(parsedInvoiceData.subtotal),
-        taxAmount: parseFloat(parsedInvoiceData.taxAmount || 0),
-        discountAmount: parseFloat(parsedInvoiceData.discountAmount || 0),
-        totalAmount: parseFloat(parsedInvoiceData.finalTotal),
-        status: "draft",
-        paymentStatus: "unpaid",
-      },
-    });
-
-    // Create invoice items
-    if (parsedInvoiceData.items && Array.isArray(parsedInvoiceData.items)) {
-      await prisma.invoiceItem.createMany({
-        data: parsedInvoiceData.items.map((item, index) => ({
-          invoiceId: invoice.id,
-          description: item.description,
-          quantity: parseFloat(item.quantity),
-          rate: parseFloat(item.rate),
-          amount: parseFloat(item.amount),
-          itemOrder: index,
-        })),
-      });
+    // Resolve business
+    let businessId = null;
+    const businessSearch = await client.query(
+      `SELECT id FROM business WHERE user_id = $1 LIMIT 1`,
+      [userId]
+    );
+    if (businessSearch.rows.length > 0) {
+      businessId = businessSearch.rows[0].id;
     }
 
-    // Create tax if configured
-    if (parsedInvoiceData.taxName && parsedInvoiceData.taxAmount) {
-      await prisma.invoiceTax.create({
-        data: {
-          invoiceId: invoice.id,
-          taxName: parsedInvoiceData.taxName,
-          taxAmount: parseFloat(parsedInvoiceData.taxAmount),
-        },
-      });
+    const invoiceResult = await client.query(
+      `INSERT INTO invoices (user_id, business_id, client_id, invoice_number, invoice_date, due_date, title, description, notes, language, currency, purchase_order, logo_url, logo_mime_type, subtotal, tax_amount, discount_amount, total_amount, status, payment_status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *`,
+      [userId, businessId, clientId, parsedData.invoiceNumber, parsedData.invoiceDate, parsedData.dueDate, parsedData.title, parsedData.description, parsedData.notes, parsedData.language, parsedData.currency, parsedData.purchaseOrder, logoUrl, logoMimeType, parseFloat(parsedData.subtotal), parseFloat(parsedData.taxAmount || 0), parseFloat(parsedData.discountAmount || 0), parseFloat(parsedData.finalTotal), "draft", "unpaid"]
+    );
+
+    const invoiceId = invoiceResult.rows[0].id;
+    console.log('Invoice created with ID:', invoiceId);
+
+    if (parsedData.items && Array.isArray(parsedData.items)) {
+      for (let i = 0; i < parsedData.items.length; i++) {
+        const item = parsedData.items[i];
+        await client.query(
+          `INSERT INTO invoice_items (invoice_id, description, quantity, rate, amount, item_order) VALUES ($1, $2, $3, $4, $5, $6)`,
+          [invoiceId, item.description, parseFloat(item.quantity), parseFloat(item.rate), parseFloat(item.amount), i]
+        );
+      }
+      console.log('Added', parsedData.items.length, 'items');
     }
 
-    // Create discount if configured
-    if (parsedInvoiceData.discountName && parsedInvoiceData.discountAmount) {
-      await prisma.invoiceDiscount.create({
-        data: {
-          invoiceId: invoice.id,
-          discountName: parsedInvoiceData.discountName,
-          discountAmount: parseFloat(parsedInvoiceData.discountAmount),
-        },
-      });
+    if (parsedData.taxName && parsedData.taxAmount) {
+      await client.query(
+        `INSERT INTO invoice_taxes (invoice_id, tax_name, tax_amount) VALUES ($1, $2, $3)`,
+        [invoiceId, parsedData.taxName, parseFloat(parsedData.taxAmount)]
+      );
+      console.log('Added tax');
     }
 
-    // Fetch complete invoice with relations
-    const completeInvoice = await prisma.invoice.findUnique({
-      where: { id: invoice.id },
-      include: {
-        items: true,
-        taxes: true,
-        discounts: true,
-        payments: true,
-      },
-    });
+    if (parsedData.discountName && parsedData.discountAmount) {
+      await client.query(
+        `INSERT INTO invoice_discounts (invoice_id, discount_name, discount_amount) VALUES ($1, $2, $3)`,
+        [invoiceId, parsedData.discountName, parseFloat(parsedData.discountAmount)]
+      );
+      console.log('Added discount');
+    }
 
-    return res.status(201).json({
-      success: true,
-      message: "Invoice created successfully",
-      data: completeInvoice,
-    });
+    await client.query('COMMIT');
+    const completeInvoice = await fetchInvoiceWithRelations(invoiceId);
+
+    return res.status(201).json({ success: true, message: "Invoice created successfully", data: completeInvoice });
   } catch (error) {
-    console.error("Create Invoice Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error creating invoice",
+    await client.query('ROLLBACK').catch(() => {});
+    console.error("Create Invoice Error:", error.message);
+    console.error("Full Error:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: error.message || "Error creating invoice", 
       error: error.message,
+      debug: {
+        userId,
+        reqUser: req.user,
+        invoiceDataExists: !!req.body.invoiceData,
+        parsedDataExists: !!parsedData
+      }
     });
+  } finally {
+    client.release();
   }
 };
 
-// ============================================
 // GET INVOICE BY ID
-// ============================================
 export const getInvoice = async (req, res) => {
   try {
     const { invoiceId } = req.params;
     const userId = req.user?.id;
 
-    const invoice = await prisma.invoice.findFirst({
-      where: {
-        id: parseInt(invoiceId),
-        userId,
-      },
-      include: {
-        items: true,
-        taxes: true,
-        discounts: true,
-        payments: true,
-        client: true,
-        business: true,
-      },
-    });
-
-    if (!invoice) {
-      return res.status(404).json({
-        success: false,
-        message: "Invoice not found",
-      });
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
     }
 
-    return res.status(200).json({
-      success: true,
-      data: invoice,
-    });
+    const ownershipResult = await pool.query('SELECT id FROM invoices WHERE id = $1 AND user_id = $2', [parseInt(invoiceId), userId]);
+
+    if (ownershipResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Invoice not found" });
+    }
+
+    const invoice = await fetchInvoiceWithRelations(parseInt(invoiceId));
+
+    return res.status(200).json({ success: true, data: invoice });
   } catch (error) {
     console.error("Get Invoice Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error fetching invoice",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "Error fetching invoice", error: error.message });
   }
 };
 
-// ============================================
 // UPDATE INVOICE
-// ============================================
 export const updateInvoice = async (req, res) => {
+  const client = await pool.connect();
   try {
     const { invoiceId } = req.params;
     const { invoiceData } = req.body;
     const userId = req.user?.id;
     const logoFile = req.file;
 
-    // Verify ownership
-    const existingInvoice = await prisma.invoice.findFirst({
-      where: {
-        id: parseInt(invoiceId),
-        userId,
-      },
-    });
+    const existingResult = await client.query('SELECT logo_url FROM invoices WHERE id = $1 AND user_id = $2', [parseInt(invoiceId), userId]);
 
-    if (!existingInvoice) {
-      return res.status(404).json({
-        success: false,
-        message: "Invoice not found",
-      });
+    if (existingResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Invoice not found" });
     }
 
-    // Delete old logo if new one is uploaded
-    if (logoFile && existingInvoice.logoUrl) {
-      const oldLogoPath = path.join(process.cwd(), "public", existingInvoice.logoUrl);
-      if (fs.existsSync(oldLogoPath)) {
-        fs.unlinkSync(oldLogoPath);
-      }
+    const existingInvoice = existingResult.rows[0];
+
+    if (logoFile && existingInvoice.logo_url) {
+      const oldLogoPath = path.join(process.cwd(), "public", existingInvoice.logo_url);
+      if (fs.existsSync(oldLogoPath)) fs.unlinkSync(oldLogoPath);
     }
 
-    const parsedInvoiceData = typeof invoiceData === 'string' 
-      ? JSON.parse(invoiceData) 
-      : invoiceData;
+    const parsedData = typeof invoiceData === 'string' ? JSON.parse(invoiceData) : invoiceData;
+    const logoUrl = logoFile ? `/uploads/${logoFile.filename}` : existingInvoice.logo_url;
+    const logoMimeType = logoFile ? logoFile.mimetype : null;
 
-    const logoUrl = logoFile ? `/uploads/${logoFile.filename}` : existingInvoice.logoUrl;
-    const logoMimeType = logoFile ? logoFile.mimetype : existingInvoice.logoMimeType;
+    await client.query('BEGIN');
 
-    const updatedInvoice = await prisma.invoice.update({
-      where: { id: parseInt(invoiceId) },
-      data: {
-        title: parsedInvoiceData.title,
-        description: parsedInvoiceData.description,
-        notes: parsedInvoiceData.notes,
-        language: parsedInvoiceData.language,
-        currency: parsedInvoiceData.currency,
-        purchaseOrder: parsedInvoiceData.purchaseOrder,
-        logoUrl,
-        logoMimeType,
-        subtotal: parseFloat(parsedInvoiceData.subtotal),
-        taxAmount: parseFloat(parsedInvoiceData.taxAmount || 0),
-        discountAmount: parseFloat(parsedInvoiceData.discountAmount || 0),
-        totalAmount: parseFloat(parsedInvoiceData.finalTotal),
-        updatedAt: new Date(),
-      },
-      include: {
-        items: true,
-        taxes: true,
-        discounts: true,
-        payments: true,
-      },
-    });
+    await client.query(
+      `UPDATE invoices SET title = $1, description = $2, notes = $3, language = $4, currency = $5, purchase_order = $6, logo_url = $7, logo_mime_type = COALESCE($8, logo_mime_type), subtotal = $9, tax_amount = $10, discount_amount = $11, total_amount = $12, updated_at = CURRENT_TIMESTAMP WHERE id = $13 AND user_id = $14`,
+      [parsedData.title, parsedData.description, parsedData.notes, parsedData.language, parsedData.currency, parsedData.purchaseOrder, logoUrl, logoMimeType, parseFloat(parsedData.subtotal), parseFloat(parsedData.taxAmount || 0), parseFloat(parsedData.discountAmount || 0), parseFloat(parsedData.finalTotal), parseInt(invoiceId), userId]
+    );
 
-    return res.status(200).json({
-      success: true,
-      message: "Invoice updated successfully",
-      data: updatedInvoice,
-    });
+    await client.query('COMMIT');
+    const updatedInvoice = await fetchInvoiceWithRelations(parseInt(invoiceId));
+
+    return res.status(200).json({ success: true, message: "Invoice updated successfully", data: updatedInvoice });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error("Update Invoice Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error updating invoice",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "Error updating invoice", error: error.message });
+  } finally {
+    client.release();
   }
 };
 
-// ============================================
 // DELETE INVOICE
-// ============================================
 export const deleteInvoice = async (req, res) => {
+  const client = await pool.connect();
   try {
     const { invoiceId } = req.params;
     const userId = req.user?.id;
 
-    const invoice = await prisma.invoice.findFirst({
-      where: {
-        id: parseInt(invoiceId),
-        userId,
-      },
-    });
+    const invoiceResult = await client.query('SELECT id, logo_url FROM invoices WHERE id = $1 AND user_id = $2', [parseInt(invoiceId), userId]);
 
-    if (!invoice) {
-      return res.status(404).json({
-        success: false,
-        message: "Invoice not found",
-      });
+    if (invoiceResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Invoice not found" });
     }
 
-    // Delete logo file
-    if (invoice.logoUrl) {
-      const logoPath = path.join(process.cwd(), "public", invoice.logoUrl);
-      if (fs.existsSync(logoPath)) {
-        fs.unlinkSync(logoPath);
-      }
+    const invoice = invoiceResult.rows[0];
+
+    if (invoice.logo_url) {
+      const logoPath = path.join(process.cwd(), "public", invoice.logo_url);
+      if (fs.existsSync(logoPath)) fs.unlinkSync(logoPath);
     }
 
-    // Delete invoice (cascades to items, taxes, discounts, payments)
-    await prisma.invoice.delete({
-      where: { id: parseInt(invoiceId) },
-    });
+    await client.query('BEGIN');
+    await client.query('DELETE FROM invoices WHERE id = $1', [parseInt(invoiceId)]);
+    await client.query('COMMIT');
 
-    return res.status(200).json({
-      success: true,
-      message: "Invoice deleted successfully",
-    });
+    return res.status(200).json({ success: true, message: "Invoice deleted successfully" });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error("Delete Invoice Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error deleting invoice",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "Error deleting invoice", error: error.message });
+  } finally {
+    client.release();
   }
 };
 
-// ============================================
 // GET ALL INVOICES FOR USER
-// ============================================
 export const getUserInvoices = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { status, page = 1, limit = 10 } = req.query;
 
-    const where = { userId };
-    if (status) {
-      where.status = status;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
     }
 
-    const invoices = await prisma.invoice.findMany({
-      where,
-      include: {
-        client: true,
-        items: true,
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (parseInt(page) - 1) * parseInt(limit),
-      take: parseInt(limit),
-    });
+    const { page = 1, limit = 10, status } = req.query;
 
-    const total = await prisma.invoice.count({ where });
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
 
-    return res.status(200).json({
-      success: true,
-      data: invoices,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / parseInt(limit)),
-      },
-    });
+    let whereClause = 'WHERE i.user_id = $1';
+    let queryParams = [userId];
+    let paramCount = 1;
+
+    if (status) {
+      paramCount++;
+      whereClause += ` AND i.status = $${paramCount}`;
+      queryParams.push(status);
+    }
+
+    const countResult = await pool.query(`SELECT COUNT(*) as total FROM invoices i ${whereClause}`, queryParams);
+    const total = parseInt(countResult.rows[0].total);
+
+    paramCount++;
+    const invoicesResult = await pool.query(
+      `SELECT i.*, c.organization_name, c.first_name, c.last_name, c.email as client_email FROM invoices i LEFT JOIN clients c ON i.client_id = c.id ${whereClause} ORDER BY i.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`,
+      [...queryParams, limitNum, offset]
+    );
+
+    const invoices = invoicesResult.rows;
+
+    for (let invoice of invoices) {
+      const itemsResult = await pool.query('SELECT * FROM invoice_items WHERE invoice_id = $1 ORDER BY item_order ASC', [invoice.id]);
+      invoice.items = itemsResult.rows;
+    }
+
+    return res.status(200).json({ success: true, data: invoices, pagination: { total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) } });
   } catch (error) {
     console.error("Get User Invoices Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error fetching invoices",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "Error fetching invoices", error: error.message });
   }
 };
+
+// HELPER FUNCTION
+async function fetchInvoiceWithRelations(invoiceId) {
+  const invoiceResult = await pool.query('SELECT * FROM invoices WHERE id = $1', [invoiceId]);
+  const invoice = invoiceResult.rows[0];
+
+  if (!invoice) return null;
+
+  const itemsResult = await pool.query('SELECT * FROM invoice_items WHERE invoice_id = $1 ORDER BY item_order ASC', [invoiceId]);
+  invoice.items = itemsResult.rows;
+
+  const taxesResult = await pool.query('SELECT * FROM invoice_taxes WHERE invoice_id = $1', [invoiceId]);
+  invoice.taxes = taxesResult.rows;
+
+  const discountsResult = await pool.query('SELECT * FROM invoice_discounts WHERE invoice_id = $1', [invoiceId]);
+  invoice.discounts = discountsResult.rows;
+
+  const paymentsResult = await pool.query('SELECT * FROM invoice_payments WHERE invoice_id = $1', [invoiceId]);
+  invoice.payments = paymentsResult.rows;
+
+  if (invoice.client_id) {
+    const clientResult = await pool.query('SELECT * FROM clients WHERE id = $1', [invoice.client_id]);
+    invoice.client = clientResult.rows[0] || null;
+  }
+
+  if (invoice.business_id) {
+    const businessResult = await pool.query('SELECT * FROM business WHERE id = $1', [invoice.business_id]);
+    invoice.business = businessResult.rows[0] || null;
+  }
+
+  return invoice;
+}

@@ -3,11 +3,19 @@ import pool from "../config/db.js"
 export const business=async(req,res)=>{
     try{
         const {
-            user_id,    
             business_name,
             is_individual,
             vanity_url
         } = req.body;
+
+        const userId = req.user?.id || req.userId || req.body.user_id;
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required"
+            });
+        }
 
     if(!vanity_url){
         return res.status(400).json({
@@ -23,7 +31,7 @@ export const business=async(req,res)=>{
     `;
 
     const values = [
-      user_id,
+      userId,
       business_name || null,
       is_individual,
       vanity_url

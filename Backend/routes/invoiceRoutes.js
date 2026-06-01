@@ -9,7 +9,7 @@ import {
   deleteInvoice,
   getUserInvoices,
 } from "../controllers/invoice.js";
-import { authenticateToken } from "../middleware/auth.js";
+import { auth as authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
 

@@ -1,4 +1,4 @@
-import { useState,useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 import {
   ArrowLeft,
@@ -17,6 +17,8 @@ const CreateInvoice = ({
 
   const [loading, setLoading] =
     useState(false);
+
+  const [currencies, setCurrencies] = useState([]);
 
   const fileInputRef = useRef(null);
 
@@ -69,8 +71,7 @@ useState(false);
 
       language: "English (US)",
 
-      currency:
-        "USD - United States Dollar",
+      currency: "USD",
 
       clientName: "",
 
@@ -78,7 +79,7 @@ useState(false);
 
       invoiceDate: "",
 
-      dueDate: "Due on Receipt",
+      dueDate: "",
 
       notes: "",
 
@@ -98,6 +99,29 @@ discountPrice: 0,});
         amount: 0,
       },
   ]);
+
+  // =========================
+  // FETCH CURRENCIES
+  // =========================
+  useEffect(() => {
+    const fetchCurrencies = async () => {
+      try {
+        const res = await fetch(
+          "https://openexchangerates.org/api/currencies.json"
+        );
+        const data = await res.json();
+        const currencyArray = Object.entries(data).map(([code, name]) => ({
+          code,
+          name,
+        }));
+        currencyArray.sort((a, b) => a.code.localeCompare(b.code));
+        setCurrencies(currencyArray);
+      } catch (error) {
+        console.log("Error fetching currencies:", error);
+      }
+    };
+    fetchCurrencies();
+  }, []);
 
   // =========================
   // HANDLE LOGO UPLOAD
@@ -251,6 +275,21 @@ discountTotal;
         return;
       }
 
+      if (!invoiceData.invoiceNumber.trim()) {
+        alert("Please enter invoice number");
+        return;
+      }
+
+      if (!invoiceData.dueDate) {
+        alert("Please select a due date");
+        return;
+      }
+
+      if (items.length === 0 || !items[0].description.trim()) {
+        alert("Please add at least one invoice item");
+        return;
+      }
+
       // Create FormData to handle both files and JSON data
       const formData = new FormData();
 
@@ -286,10 +325,23 @@ discountTotal;
         },
       });
 
-      const result = await response.json();
+      console.log('Response Status:', response.status);
+      console.log('Response Headers:', response.headers);
+
+      let result;
+      try {
+        const responseText = await response.text();
+        console.log('Response Text:', responseText);
+        result = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError);
+        throw new Error(`Server response invalid: ${parseError.message}`);
+      }
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to save invoice');
+        console.error('Error Response:', result);
+        const errorMessage = result.error || result.message || `Server error: ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       alert('Invoice saved successfully!');
@@ -300,7 +352,7 @@ discountTotal;
 
     } catch(error) {
 
-      console.error('Error:', error);
+      console.error('Error Details:', error);
       alert('Error saving invoice: ' + error.message);
 
     } finally {
@@ -577,15 +629,29 @@ discountTotal;
                   Currency
                 </label>
 
-                <input
-                  type="text"
+                <select
                   name="currency"
                   value={
                     invoiceData.currency
                   }
                   onChange={handleChange}
                   className="input-style"
-                />
+                >
+                  <option value="" className="bg-[#1e293b] text-white">
+                    Select Currency
+                  </option>
+                  {currencies.map(
+                    (currency) => (
+                      <option
+                        key={currency.code}
+                        value={currency.code}
+                        className="bg-[#1e293b] text-white"
+                      >
+                        {currency.code} - {currency.name}
+                      </option>
+                    )
+                  )}
+                </select>
 
               </div>
 
@@ -684,32 +750,15 @@ discountTotal;
                   Due Date
                 </label>
 
-                <select
+                <input
+                  type="date"
                   name="dueDate"
                   value={
                     invoiceData.dueDate
                   }
                   onChange={handleChange}
                   className="input-style"
-                >
-
-                  <option>
-                    Due on Receipt
-                  </option>
-
-                  <option>
-                    Net 7
-                  </option>
-
-                  <option>
-                    Net 15
-                  </option>
-
-                  <option>
-                    Net 30
-                  </option>
-
-                </select>
+                />
 
               </div>
 

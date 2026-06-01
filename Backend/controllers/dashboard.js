@@ -5,7 +5,7 @@ async (req, res) => {
 
    try {
 
-      const userId = req.userId;
+      const userId = req.user?.id || req.userId;
 
       const query = `
          SELECT *

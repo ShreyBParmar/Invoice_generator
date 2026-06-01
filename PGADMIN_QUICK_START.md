@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     description TEXT,
     notes TEXT,
     language VARCHAR(50) DEFAULT 'English (US)',
-    currency VARCHAR(10) NOT NULL,
+    currency VARCHAR(100) NOT NULL,
     purchase_order VARCHAR(100),
     logo_url VARCHAR(500),
     logo_mime_type VARCHAR(100),

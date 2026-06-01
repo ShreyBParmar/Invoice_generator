@@ -228,7 +228,7 @@ console.log("Payload:", payload);
 
 const res =
 await fetch(
-"http://localhost:3000/api/addclient",
+"/api/addclient",
 {
  method:"POST",
 
@@ -244,7 +244,15 @@ await fetch(
  JSON.stringify(payload)
 })
 
-            const data= await res.json()
+            let data;
+            try {
+              const responseText = await res.text();
+              console.log('Response Text:', responseText);
+              data = responseText ? JSON.parse(responseText) : {};
+            } catch (parseError) {
+              console.error('JSON Parse Error:', parseError);
+              throw new Error(`Server response invalid: ${parseError.message}`);
+            }
 
             if(res.ok){
               console.log("Client data saved");

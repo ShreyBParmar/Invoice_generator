@@ -47,10 +47,12 @@ process.env.JWT_SECRET
          process.env.JWT_SECRET
       );
 
-      // STORE USER ID
+      // STORE USER INFO
 
-      req.userId =
-      decoded.userId;
+      req.user = {
+        id: decoded.userId
+      };
+      req.userId = decoded.userId;
 
       next();
 
