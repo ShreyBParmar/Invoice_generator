@@ -24,7 +24,7 @@ const AddClient = ({ setActivePage }) => {
   lastname:"",
 
   email:"",
-  website:"",
+  website_url:"",
 
   currency:"",
   language:"English (US)",
@@ -37,8 +37,8 @@ const AddClient = ({ setActivePage }) => {
   city:"",
   country:"",
 
-  phone_number:"",
-  fax_number:"",
+  phone:"",
+  fax:"",
   tax_id:""
 };
 
@@ -579,9 +579,9 @@ await fetch(
 
               <input
                 type="text"
-                name="website"
+                name="website_url"
                 placeholder="Website URL"
-                value={formData.website}
+                value={formData.website_url}
                 onChange={handleChange}
                 className="input-style"
               />
@@ -783,18 +783,18 @@ await fetch(
 
             <input
               type="text"
-              name="phone_number"
+              name="phone"
               placeholder="Phone number"
-              value={formData.phone_number}
+              value={formData.phone}
               onChange={handleChange}
               className="input-style"
             />
 
             <input
               type="text"
-              name="fax_number"
+              name="fax"
               placeholder="Fax number"
-              value={formData.fax_number}
+              value={formData.fax}
               onChange={handleChange}
               className="input-style"
             />

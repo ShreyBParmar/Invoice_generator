@@ -16,7 +16,7 @@ export const addClient=async(req,res)=>{
             firstname, 
             lastname, 
             email, 
-            website, 
+            website_url, 
             currency, 
             language, 
             address1, 
@@ -25,14 +25,14 @@ export const addClient=async(req,res)=>{
             state, 
             city, 
             country, 
-            phone_number, 
-            fax_number,
+            phone, 
+            fax,
             tax_id,
             clientType} = req.body;
 
          const query = `
             INSERT INTO clients
-            (user_id, client_type, organization_name, first_name, last_name, email, website, currency, language, address1, address2, city, state, postal_code, country, phone, fax, tax_id)
+            (user_id, client_type, organization_name, first_name, last_name, email, website_url, currency, language, address1, address2, city, state, postal_code, country, phone, fax, tax_id)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
             RETURNING *
         `;
@@ -44,7 +44,7 @@ export const addClient=async(req,res)=>{
             firstname, 
             lastname, 
             email, 
-            website, 
+            website_url, 
             currency, 
             language, 
             address1, 
@@ -53,8 +53,8 @@ export const addClient=async(req,res)=>{
             state,
             postalcode, 
             country, 
-            phone_number, 
-            fax_number,
+            phone, 
+            fax,
             tax_id
         ];
 

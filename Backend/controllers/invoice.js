@@ -4,8 +4,18 @@ import fs from "fs";
 
 // CREATE INVOICE WITH LOGO
 export const createInvoice = async (req, res) => {
+
+  console.log("req.user:", req.user);
+console.log("req.userId:", req.userId);   
+
   const client = await pool.connect();
-  let userId = req.user?.id || req.userId;
+ console.log("=== CREATE INVOICE ===");
+console.log("req.user =", req.user);
+console.log("req.userId =", req.userId);
+
+let userId = req.user?.id || req.userId;
+
+console.log("FINAL USER ID =", userId);
   let parsedData = null;
   
   try {
@@ -76,6 +86,10 @@ export const createInvoice = async (req, res) => {
     if (businessSearch.rows.length > 0) {
       businessId = businessSearch.rows[0].id;
     }
+
+    console.log("userId =", userId);
+console.log("businessId =", businessId);
+console.log("clientId =", clientId);
 
     const invoiceResult = await client.query(
       `INSERT INTO invoices (user_id, business_id, client_id, invoice_number, invoice_date, due_date, title, description, notes, language, currency, purchase_order, logo_url, logo_mime_type, subtotal, tax_amount, discount_amount, total_amount, status, payment_status)

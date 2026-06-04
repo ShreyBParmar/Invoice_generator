@@ -60,7 +60,8 @@ export const signUp = async (req, res) => {
         );
 
         console.log("Token created:", token);
-
+        console.log("SIGN SECRET:", process.env.JWT_SECRET);
+        
         res.status(201).json({
 
             success: true,
