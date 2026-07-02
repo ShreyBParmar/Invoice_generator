@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   User,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 
 const AddClient = ({ setActivePage }) => {
+  const queryClient = useQueryClient();
 
   // =========================
   // INITIAL FORM
@@ -103,24 +105,30 @@ const AddClient = ({ setActivePage }) => {
     if (countries.length > 0) return;
 
     try {
+  const response = await fetch(
+    'https://api.restcountries.com/countries/v5?q=canada',
+    { headers: { 'Authorization': 'Bearer rc_live_ff7f3ea205fc4ee9a48c43673ebcbcbc' } }
+  );
 
-        const response = await fetch(
-            "https://restcountries.com/v3.1/all?fields=name,cca3"
-        );
+  const data = await response.json();
+  console.log('Raw country data:', data);
+  
+  // 1. Make sure to target the 'objects' array specifically
+  const countriesArray = data.objects; 
 
-        const data = await response.json();
+  // 2. Sort using 'names.common' (plural)
+  const sortedCountries = countriesArray.sort((a, b) =>
+    a.names.common.localeCompare(b.names.common)
+  );
 
-        console.log(data);
+  // 3. (Optional) If you want an array of JUST the strings after sorting
+  const justNames = sortedCountries.map(country => country.names.common);
 
-        const sortedCountries = data.sort((a, b) =>
-            a.name.common.localeCompare(b.name.common)
-        );
+  console.log(justNames);
 
-        setCountries(sortedCountries);
-
-    } catch (error) {
-        console.log(error);
-    }
+} catch (error) {
+  console.error('Error fetching countries:', error);
+}
 };
   
   // =========================
@@ -256,6 +264,7 @@ await fetch(
 
             if(res.ok){
               console.log("Client data saved");
+              queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
               setActivePage("dashboard");
               setFormData(initialFormData);
               setClientType("individual");

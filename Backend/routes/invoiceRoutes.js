@@ -9,10 +9,11 @@ import {
   deleteInvoice,
   getUserInvoices,
 } from "../controllers/invoice.js";
-import { auth as authenticateToken } from "../middleware/auth.js";
+import { auth } from "../middleware/auth.js";
+import { getAllInvoices } from "../controllers/invoicesdata.js";
+import { getReportData } from "../controllers/getReportData.js";
 
 const router = express.Router();
-
 // ============================================
 // CONFIGURE MULTER FOR FILE UPLOADS
 // ============================================
@@ -59,18 +60,26 @@ const upload = multer({
 // ============================================
 
 // Create invoice with logo
-router.post("/", authenticateToken, upload.single("logo"), createInvoice);
+router.post("/", auth, upload.single("logo"), createInvoice);
 
 // Get all invoices for user
-router.get("/", authenticateToken, getUserInvoices);
+router.get("/", auth, getUserInvoices);
+
+router.get("/table", auth, getAllInvoices );
+
+router.get(
+    "/report",
+    auth,
+    getReportData
+);
 
 // Get invoice by ID
-router.get("/:invoiceId", authenticateToken, getInvoice);
+router.get("/:invoiceId", auth, getInvoice);
 
 // Update invoice
-router.put("/:invoiceId", authenticateToken, upload.single("logo"), updateInvoice);
+router.put("/:invoiceId", auth, upload.single("logo"), updateInvoice);
 
 // Delete invoice
-router.delete("/:invoiceId", authenticateToken, deleteInvoice);
+router.delete("/:invoiceId", auth, deleteInvoice);
 
 export default router;

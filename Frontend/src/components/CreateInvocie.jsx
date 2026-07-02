@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   ArrowLeft,
@@ -7,9 +8,10 @@ import {
   Trash2,
 } from "lucide-react";
 
-const CreateInvoice = ({
+export const CreateInvoice = ({
   setActivePage
 }) => {
+  const queryClient = useQueryClient();
 
   // =========================
   // STATES
@@ -346,6 +348,7 @@ discountTotal;
 
       alert('Invoice saved successfully!');
       console.log('Invoice created:', result.data);
+      queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
       
       // Reset form or navigate back
       setActivePage('dashboard');

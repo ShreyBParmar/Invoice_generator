@@ -2,6 +2,10 @@ import pool from "../config/db.js"
 
 export const addClient=async(req,res)=>{
     try{
+                console.log("ADD CLIENT USER ID:", req.user?.id);
+console.log("REQ USER:", req.user);
+console.log("REQ USERID:", req.userId);
+
         const userId = req.user?.id;
 
         if (!userId) {
@@ -59,6 +63,8 @@ export const addClient=async(req,res)=>{
         ];
 
         const result = await pool.query(query, values);
+
+
 
          res.status(201).json({
             success: true,

@@ -33,16 +33,14 @@ const Account = ({ nextStep }) => {
     try {
 
         const response = await fetch(
-            "https://restcountries.com/v3.1/all?fields=name,cca3"
-        );
+  'https://api.restcountries.com/countries/v5/all',
+  { headers: { 'Authorization': 'Bearer rc_live_ff7f3ea205fc4ee9a48c43673ebcbcbc' } }
+)
+    
 
         const data = await response.json();
 
-        console.log(data);
-
-        const sortedCountries = data.sort((a, b) =>
-            a.name.common.localeCompare(b.name.common)
-        );
+        console.log("Data: ",data);
 
         setCountries(sortedCountries);
 

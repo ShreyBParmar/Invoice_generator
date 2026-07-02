@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS business (
 -- CLIENTS TABLE
 CREATE TABLE IF NOT EXISTS clients (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     client_type VARCHAR(50) NOT NULL,
     organization_name VARCHAR(255),
     first_name VARCHAR(255),
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS clients (
     language_select VARCHAR(50),
     address1 VARCHAR(255),
     address2 VARCHAR(255),
-    city VARCHAR(100),
+    city VARCHAR(100), 
     state_name VARCHAR(100),
     postal_code VARCHAR(20),
     country VARCHAR(100),

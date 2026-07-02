@@ -143,12 +143,26 @@ const SignUp = ({nextStep}) => {
                 >
                     Next
                 </button>
-                <span
-                  onClick={() => navigate("/business")}
-                  className="text-blue-500 cursor-pointer"
-                >
-                  Login
-                </span>
+                <div className="mt-4 text-center">
+
+  <span className="text-gray-600">
+    Already have an account?
+  </span>
+
+  <button
+    type="button"
+    onClick={() => navigate("/login")}
+    className="
+      ml-2
+      text-blue-500
+      font-semibold
+      hover:underline
+    "
+  >
+    Login
+  </button>
+
+</div>
             </form>
         </div>
     </div>
