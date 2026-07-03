@@ -21,6 +21,7 @@ export const CreateInvoice = ({
     useState(false);
 
   const [currencies, setCurrencies] = useState([]);
+  const [userClients, setUserClients] = useState([]);
 
   const fileInputRef = useRef(null);
 
@@ -76,6 +77,8 @@ useState(false);
       currency: "USD",
 
       clientName: "",
+      clientId: "",
+      clientEmail: "",
 
       purchaseOrder: "",
 
@@ -122,7 +125,28 @@ discountPrice: 0,});
         console.log("Error fetching currencies:", error);
       }
     };
+
+    const fetchUserClients = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:3000/api/clients/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await res.json();
+        console.log("Fetched clients:", data);
+        if (res.ok && data.success) {
+          setUserClients(data.clients || []);
+        }
+      } catch (error) {
+        console.log("Error fetching clients:", error);
+      }
+    };
+
     fetchCurrencies();
+    fetchUserClients();
   }, []);
 
   // =========================
@@ -267,8 +291,13 @@ discountTotal;
       setLoading(true);
 
       // Validate required fields
-      if (!invoiceData.clientName.trim()) {
-        alert("Please enter client name");
+      if (!invoiceData.clientId) {
+        alert("Please select a client from the dropdown.");
+        return;
+      }
+
+      if (!invoiceData.clientEmail) {
+        alert("The selected client does not have an email address.");
         return;
       }
 
@@ -308,6 +337,8 @@ discountTotal;
         taxAmount: taxTotal,
         discountAmount: discountTotal,
         finalTotal,
+        clientId: invoiceData.clientId || "",
+        clientEmail: invoiceData.clientEmail || "",
         taxName: taxConfigured ? taxName : null,
         discountName: discountConfigured ? discountName : null,
       };
@@ -694,21 +725,47 @@ discountTotal;
                   Client Name
                 </label>
 
-                <input
-                  type="text"
-                  name="clientName"
-                  placeholder="
-                    Enter Client Name
-                  "
+                <div className="flex items-center gap-3">
+                  <select
+                    name="client"
+                    value={invoiceData.clientId || ""}
+                    onChange={(e) => {
+                      const selectedClient = userClients.find(
+                        (client) => String(client.id) === String(e.target.value)
+                      );
 
-                  value={
-                    invoiceData.clientName
-                  }
+                      const clientLabel = selectedClient
+                        ? selectedClient.organization_name || `${selectedClient.first_name || ""} ${selectedClient.last_name || ""}`.trim() || selectedClient.email
+                        : "";
 
-                  onChange={handleChange}
+                      setInvoiceData((prev) => ({
+                        ...prev,
+                        clientId: selectedClient ? String(selectedClient.id) : "",
+                        clientName: clientLabel,
+                        clientEmail: selectedClient ? selectedClient.email || "" : "",
+                      }));
+                    }}
+                    className="input-style flex-1"
+                  >
+                    <option value="">Select Client</option>
+                    {userClients.map((client) => {
+                      const clientLabel = client.organization_name || `${client.first_name || ""} ${client.last_name || ""}`.trim() || client.email;
+                      return (
+                        <option key={client.id} value={client.id} className="bg-[#1e293b] text-white">
+                          {clientLabel}
+                        </option>
+                      );
+                    })}
+                  </select>
 
-                  className="input-style"
-                />
+                  <button
+                    type="button"
+                    onClick={() => setActivePage("add client")}
+                    className="px-3 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-sm font-semibold text-white hover:scale-105 transition-all"
+                  >
+                    New Client
+                  </button>
+                </div>
 
               </div>
 

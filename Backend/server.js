@@ -10,6 +10,7 @@ import authRoutes from "./routes/authRoutes.js"
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import addClientRoutes from "./routes/addClientRoutes.js"
 import invoiceRoutes from "./routes/invoiceRoutes.js";
+import clientsRoutes from "./routes/clientsRoutes.js";
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -38,6 +39,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/addclient", addClientRoutes);
 app.use("/api/invoices", invoiceRoutes);
+app.use("/api/clients", clientsRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {

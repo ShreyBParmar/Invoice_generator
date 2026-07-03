@@ -1,28 +1,3 @@
-/*
-import { useState, useEffect } from "react";
-import {
-  LayoutDashboard,
-  Building2,
-  BarChart3,
-  FileText,
-  Users,
-} from "lucide-react";
-
-import { motion } from "framer-motion";
-import {CreateInvoice} from "../components/CreateInvocie"
-
-
-const Invoice = () => {
-  return (
-    <div>
-      <CreateInvoice />
-    </div>
-  )
-}
-
-export default Invoice
-*/
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -282,7 +257,6 @@ data?.invoices || [];
         border
         border-white/10
         rounded-3xl
-        overflow-hidden
       "
       >
 
@@ -314,63 +288,30 @@ data?.invoices || [];
 
               </th>
 
-              <th className="text-left">
-
-                Date
-
-              </th>
-
-              <th className="text-left">
-
-                Due
-
-              </th>
-
-              <th className="text-left">
-
-                Invoice
-
-              </th>
-
-              <th className="text-left">
-
-                Client
-
-              </th>
-
-              <th className="text-left">
-
-                Status
-
-              </th>
-
-              <th className="text-right pr-8">
-
-                Total
-
-              </th>
+              <th className="text-left">Date</th>
+              <th className="text-left">Due</th>
+              <th className="text-left">Invoice</th>
+              <th className="text-left">Client</th>
+              <th className="text-left">Status</th>
+              <th className="text-right pr-8">Total</th>
 
             </tr>
 
           </thead>
 
-          <tbody>
+        </table>
 
-            {
-
-              invoices
-
-              .filter(invoice=>
-
-invoice.invoice_number
-
-.toLowerCase()
-
-.includes(search.toLowerCase())
-
-)
-
-              .map(invoice=>(
+        <div className="max-h-60 overflow-y-auto">
+          <table className="w-full">
+            <tbody>
+              {
+                invoices
+                .filter(invoice=>
+                  invoice.invoice_number
+                  .toLowerCase()
+                  .includes(search.toLowerCase())
+                )
+                .map(invoice=>(
 
                 <tr
 
@@ -403,41 +344,13 @@ invoice.invoice_number
 
                   </td>
 
-                  <td className="text-slate-300">
+                  <td className="text-slate-300">{new Date(invoice.invoice_date).toLocaleDateString("en-GB")}</td>
 
-                    {
-new Date(invoice.invoice_date)
+                  <td className="text-slate-300">{new Date(invoice.due_date).toLocaleDateString("en-GB")}</td>
 
-.toLocaleDateString("en-GB")
-}
+                  <td className="font-medium text-white">{invoice.invoice_number}</td>
 
-                  </td>
-
-                  <td className="text-slate-300">
-
-                    {
-new Date(invoice.due_date)
-
-.toLocaleDateString("en-GB")
-}
-
-                  </td>
-
-                  <td className="font-medium text-white">
-
-                    {invoice.invoice_number}
-
-                  </td>
-
-                  <td className="text-slate-300">
-
-                    {
-invoice.organization_name ||
-
-`${invoice.first_name} ${invoice.last_name}`
-}
-
-                  </td>
+                  <td className="text-slate-300">{invoice.organization_name || `${invoice.first_name} ${invoice.last_name}`}</td>
 
                   <td>
 
@@ -458,28 +371,16 @@ invoice.organization_name ||
 
                   </td>
 
-                  <td
-                    className="
-                    text-right
-                    pr-8
-                    font-semibold
-                    text-white
-                  "
-                  >
-
-                    ₹ {Number(invoice.total_amount).toLocaleString()}
-
-                  </td>
+                  <td className="text-right pr-8 font-semibold text-white">₹ {Number(invoice.total_amount).toLocaleString()}</td>
 
                 </tr>
 
               ))
 
             }
-
-          </tbody>
-
-        </table>
+            </tbody>
+          </table>
+        </div>
 
       </div>
 

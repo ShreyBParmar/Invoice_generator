@@ -1,6 +1,65 @@
 import pool from "../config/db.js";
 import path from "path";
 import fs from "fs";
+import { Resend } from "resend";
+
+const resendClient = new Resend(process.env.RESEND_API_KEY);
+
+const sendInvoiceEmail = async ({ to, invoiceNumber, title, totalAmount, clientName }) => {
+  if (!to) {
+    console.log("No client email provided for invoice email.");
+    return;
+  }
+
+  const resendFrom = process.env.RESEND_FROM;
+  console.log("Resend config:", {
+    resendApiKeyPresent: Boolean(process.env.RESEND_API_KEY),
+    resendFrom: resendFrom ? "configured" : "missing",
+  });
+
+  if (!process.env.RESEND_API_KEY || !resendFrom) {
+    console.warn("Resend is not configured. Skipping invoice email.");
+    return;
+  }
+
+  console.log("Sending invoice email via Resend", {
+    to,
+    from: resendFrom,
+    invoiceNumber,
+    clientName,
+    totalAmount,
+  });
+
+  try {
+    const response = await resendClient.emails.send({
+      from: resendFrom,
+      to,
+      subject: `Invoice ${invoiceNumber} created`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+          <h2>Invoice Created</h2>
+          <p>Hello ${clientName || "there"},</p>
+          <p>Your invoice <strong>${invoiceNumber}</strong> has been created successfully.</p>
+          <table style="border-collapse: collapse; width: 100%; max-width: 600px;">
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Title</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${title || "Invoice"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Total Amount</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${Number(totalAmount || 0).toFixed(2)}</td>
+            </tr>
+          </table>
+          <p>Thank you for being with us.</p>
+        </div>
+      `,
+    });
+    console.log("Resend email sent", response);
+  } catch (error) {
+    console.error("Resend email failed:", error);
+    throw error;
+  }
+};
 
 // CREATE INVOICE WITH LOGO
 export const createInvoice = async (req, res) => {
@@ -57,24 +116,47 @@ console.log("FINAL USER ID =", userId);
 
     // Resolve client
     let clientId;
-    const clientName = (parsedData.clientName && parsedData.clientName.trim() !== '') ? parsedData.clientName.trim() : 'Default Client';
-    
-    const clientSearch = await client.query(
-      `SELECT id FROM clients WHERE user_id = $1 AND (organization_name = $2 OR first_name = $2 OR last_name = $2) LIMIT 1`,
-      [userId, clientName]
-    );
+    let clientEmail = null;
+    let selectedClientName = null;
 
-    if (clientSearch.rows.length > 0) {
-      clientId = clientSearch.rows[0].id;
-    } else {
-      // Create a default client for this user
-      const newClient = await client.query(
-        `INSERT INTO clients (user_id, client_type, organization_name, email)
-         VALUES ($1, $2, $3, $4) RETURNING id`,
-        [userId, 'organization', clientName, `client_${Date.now()}_${Math.floor(Math.random() * 1000)}@example.com`]
+    if (parsedData.clientId) {
+      const clientRow = await client.query(
+        `SELECT id, organization_name, first_name, last_name, email FROM clients WHERE id = $1 AND user_id = $2 LIMIT 1`,
+        [parsedData.clientId, userId]
       );
-      clientId = newClient.rows[0].id;
-      console.log('Created new client for invoice:', clientName, 'ID:', clientId);
+
+      if (clientRow.rows.length === 0) {
+        return res.status(400).json({ success: false, message: "Selected client is invalid or does not belong to you." });
+      }
+
+      const clientRowData = clientRow.rows[0];
+      clientId = clientRowData.id;
+      clientEmail = clientRowData.email;
+      selectedClientName = clientRowData.organization_name || `${clientRowData.first_name || ""} ${clientRowData.last_name || ""}`.trim();
+    } else {
+      const clientName = (parsedData.clientName && parsedData.clientName.trim() !== '') ? parsedData.clientName.trim() : 'Default Client';
+      const clientSearch = await client.query(
+        `SELECT id, email, organization_name, first_name, last_name FROM clients WHERE user_id = $1 AND (organization_name = $2 OR first_name = $2 OR last_name = $2) LIMIT 1`,
+        [userId, clientName]
+      );
+
+      if (clientSearch.rows.length > 0) {
+        const clientRowData = clientSearch.rows[0];
+        clientId = clientRowData.id;
+        clientEmail = clientRowData.email;
+        selectedClientName = clientRowData.organization_name || `${clientRowData.first_name || ""} ${clientRowData.last_name || ""}`.trim();
+      } else {
+        // Create a default client for this user
+        const newClient = await client.query(
+          `INSERT INTO clients (user_id, client_type, organization_name, email)
+           VALUES ($1, $2, $3, $4) RETURNING id, email`,
+          [userId, 'organization', clientName, `client_${Date.now()}_${Math.floor(Math.random() * 1000)}@example.com`]
+        );
+        clientId = newClient.rows[0].id;
+        clientEmail = newClient.rows[0].email;
+        selectedClientName = clientName;
+        console.log('Created new client for invoice:', clientName, 'ID:', clientId);
+      }
     }
 
     // Resolve business
@@ -128,6 +210,36 @@ console.log("clientId =", clientId);
     }
 
     await client.query('COMMIT');
+
+    const resolvedClientEmail = parsedData.clientEmail || clientEmail || null;
+    const emailRecipient = resolvedClientEmail || parsedData.clientEmail || null;
+    const emailName = selectedClientName || parsedData.clientName || null;
+
+    console.log("Resolved invoice email recipient info:", {
+      parsedDataClientEmail: parsedData.clientEmail || null,
+      dbClientEmail: clientEmail || null,
+      emailRecipient,
+      emailName,
+      clientId: parsedData.clientId || null,
+      clientName: parsedData.clientName || null,
+    });
+
+    if (emailRecipient) {
+      try {
+        await sendInvoiceEmail({
+          to: emailRecipient,
+          invoiceNumber: parsedData.invoiceNumber,
+          title: parsedData.title,
+          totalAmount: parsedData.finalTotal,
+          clientName: emailName,
+        });
+      } catch (mailError) {
+        console.error("Invoice email sending failed:", mailError);
+      }
+    } else {
+      console.warn("No recipient email available for invoice notification.");
+    }
+
     const completeInvoice = await fetchInvoiceWithRelations(invoiceId);
 
     return res.status(201).json({ success: true, message: "Invoice created successfully", data: completeInvoice });
