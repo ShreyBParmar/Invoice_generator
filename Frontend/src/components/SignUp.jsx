@@ -50,6 +50,11 @@ const SignUp = ({nextStep}) => {
           
           if(data.token) {
             localStorage.setItem("token", data.token);
+            localStorage.setItem("userEmail", formData.email);
+            localStorage.setItem(
+              "userName",
+              (data.user?.email || formData.email).split("@")[0]
+            );
             console.log("✅ Token set in localStorage");
             
             // VERIFY TOKEN WAS STORED

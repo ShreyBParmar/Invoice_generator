@@ -91,6 +91,13 @@ useState(false);
       discountPercent: 0,
 discountPrice: 0,});
 
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   // =========================
   // ITEMS
   // =========================
@@ -377,7 +384,7 @@ discountTotal;
         throw new Error(errorMessage);
       }
 
-      alert('Invoice saved successfully!');
+      showToast('Invoice saved successfully! A confirmation email was sent to the client.');
       console.log('Invoice created:', result.data);
       queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
       
@@ -387,7 +394,7 @@ discountTotal;
     } catch(error) {
 
       console.error('Error Details:', error);
-      alert('Error saving invoice: ' + error.message);
+      showToast('Error saving invoice: ' + error.message, 'error');
 
     } finally {
 
@@ -398,7 +405,13 @@ discountTotal;
 
   return (
 
-    <div className="text-white">
+    <div className="text-white relative">
+
+      {toast && (
+        <div className={`fixed top-6 right-6 z-50 rounded-2xl px-5 py-4 shadow-2xl transition duration-300 ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`}>
+          {toast.message}
+        </div>
+      )}
 
       {/* HEADER */}
       <div className="

@@ -38,6 +38,16 @@ const ReportHeader = () => {
     0
   );
 
+  const getReportUserName = () => {
+    const storedName = localStorage.getItem("userName");
+    const storedEmail = localStorage.getItem("userEmail");
+
+    if (storedName) return storedName;
+    if (storedEmail) return storedEmail.split("@")[0];
+
+    return "Logged-in user";
+  };
+
   const handleGenerateReport = () => {
     setShowReport(true);
   };
@@ -53,11 +63,15 @@ const ReportHeader = () => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const title = "Invoice Report";
     const dateText = `Generated: ${new Date().toLocaleString()}`;
+    const userName = getReportUserName();
 
     doc.setFontSize(18);
     doc.text(title, 40, 40);
     doc.setFontSize(10);
-    doc.text(dateText, 40, 60);
+    doc.text(`User: ${userName}`, 40, 60);
+    doc.text("Client: All Types", 40, 74);
+    doc.text("Period: All Time", 40, 88);
+    doc.text(dateText, 40, 102);
 
     const tableHeaders = [
       "Statement ID",

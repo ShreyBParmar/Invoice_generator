@@ -1,66 +1,135 @@
 import pool from "../config/db.js";
 import path from "path";
 import fs from "fs";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resendClient = new Resend(process.env.RESEND_API_KEY);
+const mailTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT) || 587,
+  secure: process.env.SMTP_SECURE === "true",
+  auth: process.env.SMTP_USER && process.env.SMTP_PASS ? {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  } : undefined,
+});
 
-const sendInvoiceEmail = async ({ to, invoiceNumber, title, totalAmount, clientName }) => {
+const sendInvoiceEmail = async ({ to, invoiceNumber, title, totalAmount, clientName, invoiceDate, dueDate, items = [], currency, purchaseOrder, notes, subtotal, taxAmount, discountAmount }) => {
   if (!to) {
     console.log("No client email provided for invoice email.");
     return;
   }
 
-  const resendFrom = process.env.RESEND_FROM;
-  console.log("Resend config:", {
-    resendApiKeyPresent: Boolean(process.env.RESEND_API_KEY),
-    resendFrom: resendFrom ? "configured" : "missing",
+  const smtpFrom = process.env.SMTP_USER;
+  console.log("SMTP config:", {
+    smtpHost: process.env.SMTP_HOST ? "configured" : "missing",
+    smtpPort: process.env.SMTP_PORT ? "configured" : "missing",
+    smtpUser: process.env.SMTP_USER ? "configured" : "missing",
+    smtpFrom: smtpFrom ? "configured" : "missing",
   });
 
-  if (!process.env.RESEND_API_KEY || !resendFrom) {
-    console.warn("Resend is not configured. Skipping invoice email.");
+  if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !smtpFrom) {
+    console.warn("SMTP is not configured. Skipping invoice email.");
     return;
   }
 
-  console.log("Sending invoice email via Resend", {
-    to,
-    from: resendFrom,
-    invoiceNumber,
-    clientName,
-    totalAmount,
-  });
+  const formatDate = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString("en-GB");
+  };
+
+  const itemsRows = items && items.length > 0 ? items.map((item) => `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd;">${item.description || "-"}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity ?? "-"}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${item.rate != null ? Number(item.rate).toFixed(2) : "-"}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${item.amount != null ? Number(item.amount).toFixed(2) : "-"}</td>
+      </tr>
+    `).join("") : "";
+
+  const itemsTable = itemsRows ? `
+      <h3 style="margin-bottom: 8px;">Invoice Items</h3>
+      <table style="border-collapse: collapse; width: 100%; max-width: 700px; margin-bottom: 16px;">
+        <thead>
+          <tr>
+            <th style="padding: 8px; border: 1px solid #ddd; background: #f7f7f7; text-align: left;">Description</th>
+            <th style="padding: 8px; border: 1px solid #ddd; background: #f7f7f7; text-align: center;">Qty</th>
+            <th style="padding: 8px; border: 1px solid #ddd; background: #f7f7f7; text-align: right;">Rate</th>
+            <th style="padding: 8px; border: 1px solid #ddd; background: #f7f7f7; text-align: right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsRows}
+        </tbody>
+      </table>
+    ` : "";
 
   try {
-    const response = await resendClient.emails.send({
-      from: resendFrom,
+    const info = await mailTransporter.sendMail({
+      from: smtpFrom,
       to,
       subject: `Invoice ${invoiceNumber} created`,
       html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
-          <h2>Invoice Created</h2>
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111; max-width: 700px;">
+          <h2 style="color: #1a202c;">Invoice Created</h2>
           <p>Hello ${clientName || "there"},</p>
-          <p>Your invoice <strong>${invoiceNumber}</strong> has been created successfully.</p>
-          <table style="border-collapse: collapse; width: 100%; max-width: 600px;">
+          <p>Your invoice <strong>${invoiceNumber}</strong> has been created successfully. Here are the details:</p>
+          <table style="border-collapse: collapse; width: 100%; max-width: 700px; margin-bottom: 16px;">
             <tr>
-              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Title</td>
+              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; width: 160px;">Title</td>
               <td style="padding: 8px; border: 1px solid #ddd;">${title || "Invoice"}</td>
             </tr>
             <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Invoice Date</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${formatDate(invoiceDate)}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Due Date</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${formatDate(dueDate)}</td>
+            </tr>
+            ${purchaseOrder ? `
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Purchase Order</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${purchaseOrder}</td>
+            </tr>
+            ` : ""}
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Subtotal</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${Number(subtotal || 0).toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Tax Amount</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${Number(taxAmount || 0).toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Discount Amount</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${Number(discountAmount || 0).toFixed(2)}</td>
+            </tr>
+            <tr>
               <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Total Amount</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${Number(totalAmount || 0).toFixed(2)}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${currency ? currency + " " : ""}${Number(totalAmount || 0).toFixed(2)}</td>
             </tr>
           </table>
-          <p>Thank you for being with us.</p>
+          ${itemsTable}
+          ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ""}
+          <p>Thank you for doing business with us.</p>
         </div>
       `,
     });
-    console.log("Resend email sent", response);
+    console.log("Nodemailer email sent", info);
   } catch (error) {
-    console.error("Resend email failed:", error);
+    console.error("Invoice email failed:", error);
     throw error;
   }
 };
 
+  const formatDate = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString("en-GB");
+  };
 // CREATE INVOICE WITH LOGO
 export const createInvoice = async (req, res) => {
 
@@ -232,6 +301,15 @@ console.log("clientId =", clientId);
           title: parsedData.title,
           totalAmount: parsedData.finalTotal,
           clientName: emailName,
+          invoiceDate: parsedData.invoiceDate,
+          dueDate: parsedData.dueDate,
+          items: parsedData.items,
+          currency: parsedData.currency,
+          purchaseOrder: parsedData.purchaseOrder,
+          notes: parsedData.notes,
+          subtotal: parsedData.subtotal,
+          taxAmount: parsedData.taxAmount,
+          discountAmount: parsedData.discountAmount
         });
       } catch (mailError) {
         console.error("Invoice email sending failed:", mailError);

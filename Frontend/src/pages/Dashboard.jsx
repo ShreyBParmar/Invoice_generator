@@ -196,10 +196,7 @@ const Dashboard = () => {
       <div className="flex-1 p-10 overflow-y-auto">
       <div className="flex justify-between items-center mb-10">
         <div className="relative group">
-          Good Morning, Suresh 👋
-
-      ABC Company
-suresh.invoicely.com
+          
           <button
     className="
       bg-white/10

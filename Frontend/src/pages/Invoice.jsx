@@ -36,6 +36,11 @@ const Invoice = () => {
 const invoices =
 data?.invoices || [];
 
+  const visibleInvoices = invoices.filter((invoice) => {
+    const client = (invoice.organization_name || `${invoice.first_name} ${invoice.last_name}`) || "";
+    return client.toLowerCase().includes(search.toLowerCase());
+  });
+
   const toggleSelect = (id) => {
 
     if (selected.includes(id)) {
@@ -57,16 +62,10 @@ data?.invoices || [];
 
   const toggleSelectAll = () => {
 
-    if (selected.length === invoices.length) {
-
+    if (selected.length === visibleInvoices.length) {
       setSelected([]);
-
     } else {
-
-      setSelected(
-        invoices.map(invoice => invoice.id)
-      );
-
+      setSelected(visibleInvoices.map(invoice => invoice.id));
     }
 
   };
@@ -232,7 +231,7 @@ data?.invoices || [];
 
             onChange={(e)=>setSearch(e.target.value)}
 
-            placeholder="Search invoice..."
+            placeholder="Search by client..."
 
             className="
               bg-transparent
@@ -260,7 +259,16 @@ data?.invoices || [];
       "
       >
 
-        <table className="w-full">
+        <table className="w-full table-fixed">
+          <colgroup>
+            <col style={{ width: 56 }} />
+            <col style={{ width: 120 }} />
+            <col style={{ width: 120 }} />
+            <col style={{ width: 140 }} />
+            <col style={{ width: 'auto' }} />
+            <col style={{ width: 120 }} />
+            <col style={{ width: 120 }} />
+          </colgroup>
 
           <thead>
 
@@ -273,19 +281,14 @@ data?.invoices || [];
             >
 
               <th className="p-5">
-
-                <input
-
-                  type="checkbox"
-
-                  checked={
-                    selected.length===invoices.length
-                  }
-
-                  onChange={toggleSelectAll}
-
-                />
-
+                <label className="inline-flex items-center justify-center w-full">
+                  <input
+                    type="checkbox"
+                    checked={selected.length === visibleInvoices.length && visibleInvoices.length > 0}
+                    onChange={toggleSelectAll}
+                    className="cursor-pointer"
+                  />
+                </label>
               </th>
 
               <th className="text-left">Date</th>
@@ -302,46 +305,52 @@ data?.invoices || [];
         </table>
 
         <div className="max-h-60 overflow-y-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col style={{ width: 56 }} />
+              <col style={{ width: 120 }} />
+              <col style={{ width: 120 }} />
+              <col style={{ width: 140 }} />
+              <col style={{ width: 'auto' }} />
+              <col style={{ width: 120 }} />
+              <col style={{ width: 120 }} />
+            </colgroup>
             <tbody>
               {
-                invoices
-                .filter(invoice=>
-                  invoice.invoice_number
-                  .toLowerCase()
-                  .includes(search.toLowerCase())
-                )
+                visibleInvoices
                 .map(invoice=>(
 
                 <tr
 
                   key={invoice.id}
 
+                  onClick={(e) => {
+                    // if the click originated from a checkbox, do nothing (checkbox handler will handle it)
+                    // use closest to allow clicks on input or label inside the cell
+                    if (e.target && typeof e.target.closest === 'function' && e.target.closest('input[type="checkbox"]')) return;
+                    toggleSelect(invoice.id);
+                  }}
+
                   className="
                     border-b
                     border-white/5
                     hover:bg-white/5
                     transition
+                    cursor-pointer
                   "
 
                 >
 
                   <td className="p-5">
-
-                    <input
-
-                      type="checkbox"
-
-                      checked={
-                        selected.includes(invoice.id)
-                      }
-
-                      onChange={()=>
-                        toggleSelect(invoice.id)
-                      }
-
-                    />
-
+                    <label htmlFor={`sel-${invoice.id}`} className="inline-flex items-center cursor-pointer">
+                      <input
+                        id={`sel-${invoice.id}`}
+                        type="checkbox"
+                        checked={selected.includes(invoice.id)}
+                        onChange={(e) => { e.stopPropagation(); toggleSelect(invoice.id); }}
+                        className="cursor-pointer"
+                      />
+                    </label>
                   </td>
 
                   <td className="text-slate-300">{new Date(invoice.invoice_date).toLocaleDateString("en-GB")}</td>

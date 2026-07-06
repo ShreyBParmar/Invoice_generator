@@ -53,6 +53,11 @@ const Login = () => {
           "token",
           data.token
         );
+        localStorage.setItem("userEmail", formData.email);
+        localStorage.setItem(
+          "userName",
+          (data.user?.email || formData.email).split("@")[0]
+        );
 
         navigate("/dashboard");
 
