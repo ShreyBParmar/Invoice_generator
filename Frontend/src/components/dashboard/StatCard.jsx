@@ -236,17 +236,17 @@ dashboardStats?.totalInvoices || 0;
     <div>
 
       <p className="text-sm text-slate-400">
-        Pending Revenue
+        Pending Invoices
       </p>
 
       <h2 className="mt-3 text-3xl font-semibold text-white">
-        ₹ 0
+        0
       </h2>
 
     </div>
 
     <div
-      className="
+      className=" 
         h-12
         w-12
         rounded-3xl
@@ -265,7 +265,7 @@ dashboardStats?.totalInvoices || 0;
   </div>
 
   <p className="mt-5 text-sm text-slate-400">
-    Awaiting payment
+    Awaiting review
   </p>
 
 </motion.div>

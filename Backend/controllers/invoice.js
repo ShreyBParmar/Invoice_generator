@@ -65,8 +65,6 @@ const sendInvoiceEmail = async ({ to, invoiceNumber, title, totalAmount, clientN
       </table>
     ` : "";
 
-    const paymentLink = "https://rzp.io/i/AbCdEf123";
-    
   try {
     const info = await mailTransporter.sendMail({
       from: smtpFrom,
@@ -116,33 +114,6 @@ const sendInvoiceEmail = async ({ to, invoiceNumber, title, totalAmount, clientN
           ${itemsTable}
           ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ""}
           <br>
-
-    <a
-      href="${paymentLink}"
-      target="_blank"
-      style="
-        display:inline-block;
-        background:#4F46E5;
-        color:#ffffff;
-        padding:12px 24px;
-        border-radius:6px;
-        text-decoration:none;
-        font-weight:bold;
-      "
-    >
-      Pay Now
-    </a>
-
-    <br><br>
-
-    <p>If the button doesn't work, use this link:</p>
-
-    <a href="${paymentLink}">
-      ${paymentLink}
-    </a>
-
-    <br><br>
-
           <p>Thank you for doing business with us.</p>
         </div>
       `,

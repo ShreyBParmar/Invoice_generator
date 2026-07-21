@@ -19,7 +19,7 @@ const InvoiceStatusChart = () => {
   const data = {
 
     labels: [
-      "Paid",
+      "Sent",
       "Pending",
       "Draft",
       "Overdue"

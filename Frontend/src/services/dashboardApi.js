@@ -1,3 +1,5 @@
+import { getApiUrl } from "../utils/api";
+
 export const getDashboardStats =
 async () => {
 
@@ -38,7 +40,7 @@ export const getRevenueAnalytics = async () => {
   const token = localStorage.getItem("token");
 
   const res = await fetch(
-    "http://localhost:3000/api/dashboard/revenue",
+    getApiUrl("/api/dashboard/revenue"),
     {
       headers: {
         Authorization: `Bearer ${token}`
@@ -59,7 +61,7 @@ export const getRecentInvoices = async () => {
     localStorage.getItem("token");
 
     const res = await fetch(
-        "http://localhost:3000/api/dashboard/recent_invoices",
+        getApiUrl("/api/dashboard/recent_invoices"),
         {
             headers:{
                 Authorization:`Bearer ${token}`
@@ -83,7 +85,7 @@ export const getInvoices = async () => {
   const token = localStorage.getItem("token");
 
   const response = await fetch(
-    "http://localhost:3000/api/invoices/table",
+    getApiUrl("/api/invoices/table"),
     {
       headers: {
         Authorization: `Bearer ${token}`
@@ -108,7 +110,7 @@ export const getReportData = async () => {
     localStorage.getItem("token");
 
     const res = await fetch(
-        "http://localhost:3000/api/invoices/report",
+        getApiUrl("/api/invoices/report"),
         {
             headers:{
                 Authorization:`Bearer ${token}`

@@ -2,6 +2,7 @@ import {useState} from 'react'
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff,GraduationCap } from "lucide-react";
 import { checkTokenStatus, displayTokenStatus } from '../utils/tokenDebug';
+import { getApiUrl } from '../utils/api';
 
 const SignUp = ({nextStep}) => {
     const [formData, setFormData] = useState({
@@ -31,7 +32,7 @@ const SignUp = ({nextStep}) => {
         }
 
         const response = await fetch(
-            "http://localhost:3000/api/auth/signup",
+            getApiUrl('/api/auth/signup'),
             {
                 method: "POST",
                 headers: {

@@ -15,6 +15,7 @@ import DashboardTab from "../components/DashboardTab";
 import AddClient from "../components/AddClient";
 import CreateInvocie from "../components/CreateInvocie";
 import { displayTokenStatus } from "../utils/tokenDebug";
+import { getApiUrl } from "../utils/api";
 
 const Dashboard = () => {
 
@@ -43,7 +44,7 @@ const Dashboard = () => {
         const token = localStorage.getItem("token");
 
         const res = await fetch(
-          "http://localhost:3000/api/dashboard",
+          getApiUrl("/api/dashboard"),
           {
             headers: {
               Authorization: `Bearer ${token}`

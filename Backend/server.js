@@ -15,6 +15,12 @@ import clientsRoutes from "./routes/clientsRoutes.js";
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const PORT = process.env.PORT || 3000;
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:3000"
+].filter(Boolean);
 
 // CHECK IF JWT_SECRET IS SET
 if (!process.env.JWT_SECRET) {
@@ -24,7 +30,16 @@ if (!process.env.JWT_SECRET) {
 
 console.log("JWT_SECRET is configured");
 
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ limit: '50mb' }));
 
@@ -61,6 +76,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });

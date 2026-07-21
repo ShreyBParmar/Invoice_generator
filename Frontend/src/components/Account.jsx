@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getApiUrl } from '../utils/api';
 
 const Account = ({ nextStep }) => {
 
@@ -54,7 +55,7 @@ const Account = ({ nextStep }) => {
         e.preventDefault();
 
         try{
-            const res = await fetch("http://localhost:3000/api/auth/account",{
+            const res = await fetch(getApiUrl('/api/auth/account'),{
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

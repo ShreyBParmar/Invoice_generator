@@ -7,6 +7,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { getApiUrl } from "../utils/api";
 
 export const CreateInvoice = ({
   setActivePage
@@ -136,7 +137,7 @@ discountPrice: 0,});
     const fetchUserClients = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:3000/api/clients/", {
+        const res = await fetch(getApiUrl("/api/clients/"), {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -357,7 +358,7 @@ discountTotal;
 
       // API CALL - Create Invoice
       const token = localStorage.getItem('token'); // Get token from localStorage
-      const response = await fetch('/api/invoices', {
+      const response = await fetch(getApiUrl('/api/invoices'), {
         method: 'POST',
         body: formData,
         headers: {

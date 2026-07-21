@@ -1,5 +1,6 @@
 import { useState} from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiUrl } from "../utils/api";
 
 const Business = ({nextStep}) => {
   const navigate = useNavigate(); 
@@ -31,7 +32,7 @@ localStorage.getItem("token");
 
 console.log(token);
 
-      const res = await fetch("http://localhost:3000/api/auth/business",{
+      const res = await fetch(getApiUrl('/api/auth/business'),{
         method: "POST",
         headers: {
           "Content-Type": "application/json",
