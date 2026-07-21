@@ -19,7 +19,8 @@ const PORT = process.env.PORT || 3000;
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:5173",
-  "http://localhost:3000"
+  "http://localhost:3000",
+  "https://invoice-generator-nine-eta-12.vercel.app/"
 ].filter(Boolean);
 
 // CHECK IF JWT_SECRET IS SET
@@ -48,7 +49,10 @@ app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
 
 pool.connect()
   .then(() => console.log("Database connected"))
-  .catch(err => console.log(err));
+  .catch(err => {
+    console.error("Database connection failed:", err.message);
+    console.error("Check your DATABASE_URL or DB_* environment variables in Render.");
+  });
 
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
