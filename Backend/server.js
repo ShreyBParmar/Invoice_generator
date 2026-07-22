@@ -20,7 +20,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:5173",
   "http://localhost:3000",
-  "https://invoice-generator-nine-eta-12.vercel.app"
+  "https://invoice-generator-nine-eta-12.vercel.app",
 ].filter(Boolean);
 
 // CHECK IF JWT_SECRET IS SET
