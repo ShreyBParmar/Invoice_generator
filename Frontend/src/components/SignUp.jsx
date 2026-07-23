@@ -1,6 +1,6 @@
 import {useState} from 'react'
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff,GraduationCap } from "lucide-react";
+import { Eye, EyeOff, GraduationCap, Loader2 } from "lucide-react";
 import { checkTokenStatus, displayTokenStatus } from '../utils/tokenDebug';
 import { getApiUrl } from '../utils/api';
 
@@ -14,6 +14,7 @@ const SignUp = ({nextStep}) => {
 
    const [showPassword, setShowPassword] = useState(false);
    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
    const handleChange = (e) => {
     setFormData({
@@ -30,6 +31,9 @@ const SignUp = ({nextStep}) => {
           alert("Passwords do not match");
           return;
         }
+
+        if (isLoading) return;
+        setIsLoading(true);
 
         const response = await fetch(
             getApiUrl('/api/auth/signup'),
@@ -82,6 +86,8 @@ const SignUp = ({nextStep}) => {
     } catch (error) {
         console.log("Signup error:", error);
         alert("Error during signup: " + error.message);
+    } finally {
+      setIsLoading(false);
     }
    }
 
@@ -145,9 +151,17 @@ const SignUp = ({nextStep}) => {
 
                 <button
                     type='submit'
-                    className="bg-black text-white px-5 py-2"
+                    disabled={isLoading}
+                    className="bg-black text-white px-5 py-2 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                    Next
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 size={18} className="animate-spin" />
+                        Creating account...
+                      </span>
+                    ) : (
+                      "Next"
+                    )}
                 </button>
                 <div className="mt-4 text-center">
 

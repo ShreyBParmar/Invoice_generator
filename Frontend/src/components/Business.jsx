@@ -1,11 +1,13 @@
 import { useState} from "react";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { getApiUrl } from "../utils/api";
 
 const Business = ({nextStep}) => {
   const navigate = useNavigate(); 
 
   const [isChecked, setIsChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const token =
 localStorage.getItem("token");
@@ -25,6 +27,9 @@ localStorage.getItem("token");
 
   const handleSubmit = async(e) => {
     e.preventDefault();
+
+    if (isLoading) return;
+    setIsLoading(true);
 
     try{
       const token =
@@ -52,6 +57,8 @@ console.log(token);
       }
     } catch(error){
       console.log(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -126,6 +133,7 @@ console.log(token);
 
         <button
           type="submit"
+          disabled={isLoading}
           className="
         bg-black
         text-white
@@ -133,10 +141,19 @@ console.log(token);
           py-3
           rounded-md
           hover:opacity-90
+          disabled:cursor-not-allowed
+          disabled:opacity-70
           transition
           "
         >
-          Start
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 size={18} className="animate-spin" />
+              Setting up...
+            </span>
+          ) : (
+            "Start"
+          )}
         </button>
         </form>
 

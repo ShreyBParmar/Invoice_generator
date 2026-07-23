@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Loader2 } from 'lucide-react';
 import { getApiUrl } from '../utils/api';
 
 const Account = ({ nextStep }) => {
@@ -17,6 +18,7 @@ const Account = ({ nextStep }) => {
     });
 
     const [countries, setCountries] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     // Handle Input Changes
     const handleChange = (e) => {
@@ -54,6 +56,9 @@ const Account = ({ nextStep }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (isLoading) return;
+        setIsLoading(true);
+
         try{
             const res = await fetch(getApiUrl('/api/auth/account'),{
                 method: "POST",
@@ -76,6 +81,9 @@ const Account = ({ nextStep }) => {
         }
         catch(error){
             console.log(error);
+        }
+        finally {
+            setIsLoading(false);
         }
 
         console.log(formData);
@@ -316,6 +324,7 @@ const Account = ({ nextStep }) => {
                     {/* Button */}
                     <button
                         type="submit"
+                        disabled={isLoading}
                         className="
                             bg-black
                             text-white
@@ -323,10 +332,19 @@ const Account = ({ nextStep }) => {
                             py-3
                             rounded-md
                             hover:opacity-90
+                            disabled:cursor-not-allowed
+                            disabled:opacity-70
                             transition
                         "
                     >
-                        Next
+                        {isLoading ? (
+                            <span className="flex items-center gap-2">
+                                <Loader2 size={18} className="animate-spin" />
+                                Saving...
+                            </span>
+                        ) : (
+                            "Next"
+                        )}
                     </button>
 
                 </form>
