@@ -23,7 +23,7 @@ const allowedOrigins = [
   "https://invoice-generator-nine-eta-12.vercel.app",
 ].filter(Boolean);
 
-// CHECK IF JWT_SECRET IS SET
+// CHECK IF JWT_SECRET IS SET OR NOT
 if (!process.env.JWT_SECRET) {
   console.error("ERROR: JWT_SECRET is not set in .env file");
   process.exit(1);
