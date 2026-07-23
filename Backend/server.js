@@ -16,12 +16,13 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
-const allowedOrigins = [
+const normalizeOrigin = (origin) => origin?.trim().replace(/\/$/, "");
+const allowedOrigins = new Set([
   process.env.FRONTEND_URL,
   "http://localhost:5173",
   "http://localhost:3000",
   "https://invoice-generator-nine-eta-12.vercel.app",
-].filter(Boolean);
+].map(normalizeOrigin).filter(Boolean));
 
 // CHECK IF JWT_SECRET IS SET OR NOT
 if (!process.env.JWT_SECRET) {
@@ -33,13 +34,14 @@ console.log("JWT_SECRET is configured");
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(null, false);
     }
   },
   credentials: true,
+  optionsSuccessStatus: 204,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ limit: '50mb' }));
