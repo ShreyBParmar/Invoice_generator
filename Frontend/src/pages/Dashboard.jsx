@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
-  Building2,
   BarChart3,
-  FileText,
-  Users,
+  Menu,
+  X,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -24,6 +23,8 @@ const Dashboard = () => {
   const [activePage, setActivePage] = useState("dashboard");
 
   const [tokenStatus, setTokenStatus] = useState("");
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     // CHECK TOKEN STATUS
@@ -74,30 +75,36 @@ const Dashboard = () => {
     <div className="flex min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white overflow-hidden">
 
       {/* Sidebar */}
-      <div className="
-        w-[270px]
+      <div
+        className={`
+        fixed inset-y-0 left-0 z-40
+        w-[min(82vw,270px)]
+        md:relative md:inset-auto md:z-auto
+        ${sidebarOpen ? "translate-x-0 md:w-[270px]" : "-translate-x-full md:w-20 md:translate-x-0"}
         bg-white/5
         backdrop-blur-xl
         border-r
         border-white/10
-        p-6
+        p-4 md:p-6
         flex
         flex-col
         justify-between
-      ">
+        transition-all duration-300 ease-in-out
+      `}
+      >
 
         <div>
 
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-14">
+          <div className={`flex items-center gap-3 mb-10 md:mb-14 ${sidebarOpen ? "" : "md:justify-center"}`}>
 
             <img
               src={logo}
               alt="logo"
-              className="w-12 h-12 rounded-xl object-cover shadow-lg"
+              className="w-11 h-11 rounded-xl object-cover shadow-lg shrink-0"
             />
 
-            <div>
+            <div className={sidebarOpen ? "" : "md:hidden"}>
               <h1 className="text-2xl font-bold tracking-wide">
                 Invoicely
               </h1>
@@ -106,6 +113,16 @@ const Dashboard = () => {
                 Invoice Platform
               </p>
             </div>
+
+            <button
+              type="button"
+              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+              aria-expanded={sidebarOpen}
+              onClick={() => setSidebarOpen((isOpen) => !isOpen)}
+              className={`ml-auto rounded-xl p-3 text-slate-300 hover:bg-white/10 hover:text-white transition md:absolute md:top-5 ${sidebarOpen ? "md:right-4" : "md:left-1/2 md:-translate-x-1/2"}`}
+            >
+              {sidebarOpen ? <X size={21} /> : <Menu size={21} />}
+            </button>
 
           </div>
 
@@ -118,11 +135,12 @@ const Dashboard = () => {
                 flex
                 items-center
                 gap-3
-                p-4
+                w-full p-4
                 rounded-2xl
                 transition-all
                 duration-300
                 hover:scale-[1.02]
+                ${sidebarOpen ? "justify-start" : "md:justify-center"}
                 ${activePage === "dashboard"
                   ? "bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg"
                   : "hover:bg-white/10"
@@ -130,7 +148,7 @@ const Dashboard = () => {
               `}
             >
               <LayoutDashboard size={20} />
-              Dashboard
+              <span className={sidebarOpen ? "" : "md:hidden"}>Dashboard</span>
             </button>
 
             <button
@@ -139,11 +157,12 @@ const Dashboard = () => {
                 flex
                 items-center
                 gap-3
-                p-4
+                w-full p-4
                 rounded-2xl
                 transition-all
                 duration-300
                 hover:scale-[1.02]
+                ${sidebarOpen ? "justify-start" : "md:justify-center"}
                 ${activePage === "reports"
                   ? "bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg"
                   : "hover:bg-white/10"
@@ -151,7 +170,7 @@ const Dashboard = () => {
               `}
             >
               <BarChart3 size={20} />
-              Reports
+              <span className={sidebarOpen ? "" : "md:hidden"}>Reports</span>
             </button>
 
             <button
@@ -160,11 +179,12 @@ const Dashboard = () => {
                 flex
                 items-center
                 gap-3
-                p-4
+                w-full p-4
                 rounded-2xl
                 transition-all
                 duration-300
                 hover:scale-[1.02]
+                ${sidebarOpen ? "justify-start" : "md:justify-center"}
                 ${activePage === "invoices"
                   ? "bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg"
                   : "hover:bg-white/10"
@@ -172,7 +192,7 @@ const Dashboard = () => {
               `}
             >
               <BarChart3 size={20} />
-              Invoices
+              <span className={sidebarOpen ? "" : "md:hidden"}>Invoices</span>
             </button>
 
           </div>
@@ -180,7 +200,7 @@ const Dashboard = () => {
         </div>
 
         {/* Footer */}
-        <div className="mt-10 space-y-3">
+        <div className={`mt-10 space-y-3 ${sidebarOpen ? "" : "md:hidden"}`}>
           <div className="text-sm text-slate-400">
             © 2026 Invoicely
           </div>
@@ -193,8 +213,17 @@ const Dashboard = () => {
 
       </div>
 
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar overlay"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-slate-950/70 md:hidden"
+        />
+      )}
+
       {/* Main Content */}
-      <div className="flex-1 p-10 overflow-y-auto">
+      <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-10 overflow-y-auto">
       <div className="flex justify-between items-center mb-10">
         <div className="relative group">
           
@@ -214,7 +243,7 @@ const Dashboard = () => {
       items-center
       gap-2
       inline-flex items-center gap-2 rounded-3xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 hover:scale-[1.02] transition
-      ml-260
+      
     "
   >
     + Add New
@@ -257,7 +286,7 @@ const Dashboard = () => {
         border-b
         border-white/5
       "
-      onClick={()=> setActivePage("add client")}
+            onClick={()=> { setActivePage("add client"); setSidebarOpen(false); }}
     >
       Add Client
     </button>
@@ -273,7 +302,7 @@ const Dashboard = () => {
         transition-all
         duration-200
       "
-      onClick={()=> setActivePage("create invoice")}
+      onClick={()=> { setActivePage("create invoice"); setSidebarOpen(false); }}
     >
       Create Invoice
     </button>
