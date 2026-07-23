@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getApiUrl } from "../utils/api";
 
@@ -8,6 +8,9 @@ const Login = () => {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [isLoading, setIsLoading] =
     useState(false);
 
   const [formData, setFormData] =
@@ -28,6 +31,10 @@ const Login = () => {
   async (e) => {
 
     e.preventDefault();
+
+    if (isLoading) return;
+
+    setIsLoading(true);
 
     try {
 
@@ -71,6 +78,10 @@ const Login = () => {
     } catch (error) {
 
       console.log(error);
+
+    } finally {
+
+      setIsLoading(false);
 
     }
   };
@@ -243,6 +254,7 @@ const Login = () => {
 
           <button
             type="submit"
+            disabled={isLoading}
             className="
               w-full
 
@@ -258,11 +270,20 @@ const Login = () => {
               font-semibold
 
               hover:scale-[1.02]
+              disabled:cursor-not-allowed
+              disabled:opacity-70
 
               transition-all
             "
           >
-            Login
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 size={20} className="animate-spin" />
+                Signing in...
+              </span>
+            ) : (
+              "Login"
+            )}
           </button>
 
           <p
