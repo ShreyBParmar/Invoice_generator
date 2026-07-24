@@ -231,153 +231,120 @@ text-white
 
       {/* Main Content */}
       <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-10 overflow-y-auto">
-      <div className="flex justify-between items-center mb-10">
 
-    {/* Left Side */}
+  {/* Header */}
+  <div className="flex items-center justify-between mb-10">
+
+    {/* Left */}
     <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="
-            p-3
-            rounded-xl
-            bg-white/10
-            hover:bg-white/20
-            transition
-        "
+      onClick={() => setSidebarOpen(!sidebarOpen)}
+      className="
+        p-3
+        rounded-xl
+        bg-white/10
+        border
+        border-white/10
+        hover:bg-white/20
+        transition-all
+        duration-300
+      "
     >
-        <Menu size={22} />
+      {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
     </button>
 
-    {/* Right Side */}
+    {/* Right */}
     <div className="relative group">
 
+      <button
+        className="
+          inline-flex
+          items-center
+          gap-2
+          rounded-3xl
+          bg-gradient-to-r
+          from-indigo-500
+          to-fuchsia-500
+          px-6
+          py-4
+          text-sm
+          font-semibold
+          text-white
+          shadow-lg
+          shadow-violet-500/20
+          hover:scale-[1.03]
+          transition-all
+          duration-300
+        "
+      >
+        + Add New
+      </button>
+
+      {/* Dropdown */}
+      <div
+        className="
+          absolute
+          right-0
+          mt-3
+          w-[220px]
+          bg-slate-900/95
+          backdrop-blur-xl
+          border
+          border-white/10
+          rounded-2xl
+          shadow-2xl
+          opacity-0
+          invisible
+          group-hover:opacity-100
+          group-hover:visible
+          transition-all
+          duration-300
+          overflow-hidden
+          z-50
+        "
+      >
+
         <button
-            className="
-            inline-flex
-            items-center
-            gap-2
-            rounded-3xl
-            bg-gradient-to-r
-            from-indigo-500
-            to-fuchsia-500
-            px-6
+          onClick={() => {
+            setActivePage("add client");
+            setSidebarOpen(false);
+          }}
+          className="
+            w-full
+            text-left
+            px-5
             py-4
-            text-sm
-            font-semibold
-            text-white
-            shadow-lg
-            shadow-violet-500/20
-            hover:scale-[1.02]
-            transition
-            "
+            hover:bg-white/10
+            transition-all
+            border-b
+            border-white/5
+          "
         >
-            + Add New
+          Add Client
         </button>
 
-        {/* Dropdown */}
+        <button
+          onClick={() => {
+            setActivePage("create invoice");
+            setSidebarOpen(false);
+          }}
+          className="
+            w-full
+            text-left
+            px-5
+            py-4
+            hover:bg-white/10
+            transition-all
+          "
+        >
+          Create Invoice
+        </button>
+
+      </div>
 
     </div>
 
-</div>
+  </div>
 
-  <button
-    onClick={() => setSidebarOpen(!sidebarOpen)}
-    className="
-      p-3
-      rounded-xl
-      bg-white/10
-      border
-      border-white/10
-      hover:bg-white/20
-      transition-all
-      duration-300
-    "
-  >
-    {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
-  </button>
-
-  <div className="relative group">
-          
-          <button
-    className="
-      bg-white/10
-      backdrop-blur-lg
-      border
-      border-white/10
-      px-5
-      py-3
-      rounded-2xl
-      hover:bg-white/20
-      transition-all
-      duration-300
-      flex
-      items-center
-      gap-2
-      inline-flex items-center gap-2 rounded-3xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 hover:scale-[1.02] transition
-      
-    "
-  >
-    + Add New
-  </button>
-
-  {/* Dropdown */}
-  <div
-    className="
-      absolute
-      right-0
-      mt-3
-      w-[220px]
-      bg-slate-900/95
-      backdrop-blur-xl
-      border
-      border-white/10
-      rounded-2xl
-      shadow-2xl
-      opacity-0
-      invisible
-      group-hover:opacity-100
-      group-hover:visible
-      transition-all
-      duration-300
-      overflow-hidden
-      z-50
-    "
-  >
-
-    {/* Client Option */}
-    <button
-      className="
-        w-full
-        text-left
-        px-5
-        py-4
-        hover:bg-white/10
-        transition-all
-        duration-200
-        border-b
-        border-white/5
-      "
-            onClick={()=> { setActivePage("add client"); setSidebarOpen(false); }}
-    >
-      Add Client
-    </button>
-
-    {/* Invoice Option */}
-    <button
-      className="
-        w-full
-        text-left
-        px-5
-        py-4
-        hover:bg-white/10
-        transition-all
-        duration-200
-      "
-      onClick={()=> { setActivePage("create invoice"); setSidebarOpen(false); }}
-    >
-      Create Invoice
-    </button>
-        </div>
-      </div></div>
         {/* Dynamic Content */}
         {activePage === "dashboard" && (<DashboardTab setActivePage={setActivePage} />)}
 
@@ -391,7 +358,7 @@ text-white
 
       </div>
 
-    
+    </div>
   );
 };
 
