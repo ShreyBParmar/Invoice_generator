@@ -80,7 +80,10 @@ const Dashboard = () => {
         fixed inset-y-0 left-0 z-40
         w-[min(82vw,270px)]
         md:relative md:inset-auto md:z-auto
-        ${sidebarOpen ? "translate-x-0 md:w-[270px]" : "-translate-x-full md:w-20 md:translate-x-0"}
+        ${sidebarOpen
+  ? "translate-x-0 md:w-[270px]"
+  : "-translate-x-full md:w-0 md:-translate-x-full"
+}
         bg-white/5
         backdrop-blur-xl
         border-r
@@ -113,16 +116,6 @@ const Dashboard = () => {
                 Invoice Platform
               </p>
             </div>
-
-            <button
-              type="button"
-              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-              aria-expanded={sidebarOpen}
-              onClick={() => setSidebarOpen((isOpen) => !isOpen)}
-              className={`ml-auto rounded-xl p-3 text-slate-300 hover:bg-white/10 hover:text-white transition md:absolute md:top-5 ${sidebarOpen ? "md:right-4" : "md:left-1/2 md:-translate-x-1/2"}`}
-            >
-              {sidebarOpen ? <X size={21} /> : <Menu size={21} />}
-            </button>
 
           </div>
 
@@ -225,7 +218,24 @@ const Dashboard = () => {
       {/* Main Content */}
       <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-10 overflow-y-auto">
       <div className="flex justify-between items-center mb-10">
-        <div className="relative group">
+
+  <button
+    onClick={() => setSidebarOpen(!sidebarOpen)}
+    className="
+      p-3
+      rounded-xl
+      bg-white/10
+      border
+      border-white/10
+      hover:bg-white/20
+      transition-all
+      duration-300
+    "
+  >
+    {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+  </button>
+
+  <div className="relative group">
           
           <button
     className="
