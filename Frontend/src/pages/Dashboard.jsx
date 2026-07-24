@@ -72,29 +72,43 @@ const Dashboard = () => {
 
   return (
 
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white overflow-hidden">
+    <div className="
+flex
+min-h-screen
+overflow-x-hidden
+bg-gradient-to-br
+from-slate-950
+via-slate-900
+to-slate-800
+text-white
+">
 
       {/* Sidebar */}
-      <div
-        className={`
-        fixed inset-y-0 left-0 z-40
-        w-[min(82vw,270px)]
-        md:relative md:inset-auto md:z-auto
-        ${sidebarOpen
-  ? "translate-x-0 md:w-[270px]"
-  : "-translate-x-full md:w-0 md:-translate-x-full"
-}
-        bg-white/5
-        backdrop-blur-xl
-        border-r
-        border-white/10
-        p-4 md:p-6
-        flex
-        flex-col
-        justify-between
-        transition-all duration-300 ease-in-out
-      `}
-      >
+<div
+  className={`
+    fixed
+    inset-y-0
+    left-0
+    z-40
+    w-[270px]
+
+    ${
+      sidebarOpen
+        ? "translate-x-0 border-r border-white/10 shadow-2xl"
+        : "-translate-x-[110%] border-r-0 shadow-none"
+    }
+
+    bg-white/5
+    backdrop-blur-xl
+    p-6
+    flex
+    flex-col
+    justify-between
+    transition-all
+    duration-300
+    ease-in-out
+  `}
+>
 
         <div>
 
@@ -219,6 +233,52 @@ const Dashboard = () => {
       <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-10 overflow-y-auto">
       <div className="flex justify-between items-center mb-10">
 
+    {/* Left Side */}
+    <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="
+            p-3
+            rounded-xl
+            bg-white/10
+            hover:bg-white/20
+            transition
+        "
+    >
+        <Menu size={22} />
+    </button>
+
+    {/* Right Side */}
+    <div className="relative group">
+
+        <button
+            className="
+            inline-flex
+            items-center
+            gap-2
+            rounded-3xl
+            bg-gradient-to-r
+            from-indigo-500
+            to-fuchsia-500
+            px-6
+            py-4
+            text-sm
+            font-semibold
+            text-white
+            shadow-lg
+            shadow-violet-500/20
+            hover:scale-[1.02]
+            transition
+            "
+        >
+            + Add New
+        </button>
+
+        {/* Dropdown */}
+
+    </div>
+
+</div>
+
   <button
     onClick={() => setSidebarOpen(!sidebarOpen)}
     className="
@@ -331,7 +391,7 @@ const Dashboard = () => {
 
       </div>
 
-    </div>
+    
   );
 };
 
