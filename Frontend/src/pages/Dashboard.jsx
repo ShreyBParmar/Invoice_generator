@@ -113,25 +113,41 @@ text-white
         <div>
 
           {/* Logo */}
-          <div className={`flex items-center gap-3 mb-10 md:mb-14 ${sidebarOpen ? "" : "md:justify-center"}`}>
+<div className="flex items-center justify-between mb-14">
 
-            <img
-              src={logo}
-              alt="logo"
-              className="w-11 h-11 rounded-xl object-cover shadow-lg shrink-0"
-            />
+  <div className="flex items-center gap-3">
 
-            <div className={sidebarOpen ? "" : "md:hidden"}>
-              <h1 className="text-2xl font-bold tracking-wide">
-                Invoicely
-              </h1>
+    <img
+      src={logo}
+      alt="logo"
+      className="w-11 h-11 rounded-xl object-cover"
+    />
 
-              <p className="text-sm text-slate-400">
-                Invoice Platform
-              </p>
-            </div>
+    <div>
+      <h1 className="text-2xl font-bold">
+        Invoicely
+      </h1>
 
-          </div>
+      <p className="text-sm text-slate-400">
+        Invoice Platform
+      </p>
+    </div>
+
+  </div>
+
+  <button
+    onClick={() => setSidebarOpen(false)}
+    className="
+      p-2
+      rounded-lg
+      hover:bg-white/10
+      transition
+    "
+  >
+    <X size={20}/>
+  </button>
+
+</div>
 
           {/* Navigation */}
           <div className="flex flex-col gap-3">
@@ -230,7 +246,25 @@ text-white
       )}
 
       {/* Main Content */}
-      <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-10 overflow-y-auto">
+<div
+  className={`
+    min-w-0
+    flex-1
+    p-4
+    sm:p-6
+    lg:p-10
+    overflow-y-auto
+    transition-all
+    duration-300
+    ease-in-out
+
+    ${
+      sidebarOpen
+        ? "md:ml-[270px]"
+        : "ml-0"
+    }
+  `}
+>
 
   {/* Header */}
   <div className="flex items-center justify-between mb-10">
@@ -358,7 +392,7 @@ text-white
 
       </div>
 
-    </div>
+    </div> 
   );
 };
 
