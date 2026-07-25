@@ -135,18 +135,6 @@ text-white
 
   </div>
 
-  <button
-    onClick={() => setSidebarOpen(false)}
-    className="
-      p-2
-      rounded-lg
-      hover:bg-white/10
-      transition
-    "
-  >
-    <X size={20}/>
-  </button>
-
 </div>
 
           {/* Navigation */}
