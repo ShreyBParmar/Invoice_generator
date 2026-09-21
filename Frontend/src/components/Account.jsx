@@ -40,7 +40,7 @@ const Account = ({ nextStep }) => {
             { headers: { 'Authorization': 'Bearer rc_live_ff7f3ea205fc4ee9a48c43673ebcbcbc' } }
         ) */
     const response = await fetch(
-  'https://api.restcountries.com/countries/v5?pretty=1',
+  'https://api.restcountries.com/countries/v5',
   { headers: { 'Authorization': 'Bearer rc_live_ff7f3ea205fc4ee9a48c43673ebcbcbc' } }
 )
         const data = await response.json();
