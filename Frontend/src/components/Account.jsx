@@ -140,7 +140,7 @@ const CountrySelect = ({ value, onChange, name = "country" }) => {
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-md border bg-white shadow-lg">
+        <div className="absolute z-20 bottom-full mb-1.5 w-full overflow-hidden rounded-md border bg-white shadow-lg">
           <div className="flex items-center gap-2 border-b px-3 py-2">
             <Search size={15} className="shrink-0 text-gray-400" />
             <input
